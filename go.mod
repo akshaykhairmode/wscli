@@ -7,6 +7,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/lesismal/nbio v1.6.2
+	github.com/rs/zerolog v1.33.0
 	github.com/spf13/pflag v1.0.6
 )
 

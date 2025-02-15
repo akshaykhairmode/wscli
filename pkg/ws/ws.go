@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
+	"github.com/akshaykhairmode/wscli/pkg/logger"
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
@@ -39,7 +40,7 @@ func Connect(uri string, respHeader bool, cfgHeaders []string, auth string) (*we
 
 	c, resp, err := websocket.DefaultDialer.Dial(u.String(), headers)
 	if err != nil {
-		return nil, closeFunc, fmt.Errorf("dial err : %w", err)
+		return nil, closeFunc, fmt.Errorf("dial error : %w", err)
 	}
 
 	if respHeader {
@@ -50,7 +51,9 @@ func Connect(uri string, respHeader bool, cfgHeaders []string, auth string) (*we
 	}
 
 	closeFunc = func() {
-		c.Close()
+		if err := c.Close(); err != nil {
+			logger.GlobalLogger.Err(err).Msg("error while closing the connection")
+		}
 	}
 
 	return c, closeFunc, nil
@@ -71,7 +74,6 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup) {
 		return func(appData string) error {
 			if cfg.ShowPingPong {
 				log.Println(blueColor("received %s (data: %s)", what, appData))
-				// blueColor.Fprintf(log.Writer(), "received %s (data: %s)\n", what, appData)
 			}
 			return nil
 		}
@@ -83,7 +85,10 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup) {
 	for {
 		mt, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
+			if strings.Contains(err.Error(), "use of closed network connection") {
+				return
+			}
+			logger.GlobalLogger.Err(err).Msg("read error")
 			return
 		}
 
@@ -104,10 +109,10 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup) {
 func WriteToServer(conn *websocket.Conn, message string) {
 
 	if conn == nil {
-		log.Println("Connection is nil")
+		logger.GlobalLogger.Error().Msg("Connection is nil")
 	} else {
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
-			log.Println("write:", err)
+			logger.GlobalLogger.Err(err).Msg("write error")
 		}
 	}
 

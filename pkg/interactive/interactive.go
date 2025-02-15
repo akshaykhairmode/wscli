@@ -1,4 +1,4 @@
-package main
+package interactive
 
 import (
 	"io"
@@ -34,9 +34,7 @@ func filterInput(r rune) (rune, bool) {
 	return r, true
 }
 
-func processInteractive(cfg config.Config) {
-
-	wg := &sync.WaitGroup{}
+func Process(cfg config.Config, wg *sync.WaitGroup) {
 
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:          "\033[31m»\033[0m ",
@@ -47,6 +45,7 @@ func processInteractive(cfg config.Config) {
 
 		HistorySearchFold:   true,
 		FuncFilterInputRune: filterInput,
+		Listener:            nil,
 	})
 	if err != nil {
 		panic(err)
