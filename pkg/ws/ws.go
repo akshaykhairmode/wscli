@@ -1,32 +1,42 @@
 package ws
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/des"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
+	"github.com/chzyer/readline"
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
 
-func Connect(uri string, respHeader bool, cfgHeaders []string, auth string) (*websocket.Conn, func(), error) {
+func Connect(cfg config.Config) (*websocket.Conn, func(), error) {
 
 	closeFunc := func() {}
 
-	u, err := url.Parse(uri)
+	u, err := url.Parse(cfg.ConnectURL)
 	if err != nil {
 		return nil, closeFunc, fmt.Errorf("error while passing the url : %w", err)
 	}
 
 	headers := http.Header{}
-	for _, h := range cfgHeaders {
+	for _, h := range cfg.Headers {
 		headSpl := strings.Split(h, ":")
 		if len(headSpl) != 2 {
 			return nil, closeFunc, fmt.Errorf("invalid header : %s", h)
@@ -34,16 +44,33 @@ func Connect(uri string, respHeader bool, cfgHeaders []string, auth string) (*we
 		headers.Set(headSpl[0], headSpl[1])
 	}
 
-	if auth != "" {
-		headers.Set("Authorization", basicAuth(auth))
+	if cfg.Origin != "" {
+		headers.Set("Origin", cfg.Origin)
 	}
 
-	c, resp, err := websocket.DefaultDialer.Dial(u.String(), headers)
+	if cfg.Auth != "" {
+		headers.Set("Authorization", basicAuth(cfg.Auth))
+	}
+
+	dialer := websocket.Dialer{
+		Subprotocols:    cfg.SubProtocol,
+		TLSClientConfig: getTLSConfig(cfg.TLS, cfg.NoCertificateCheck),
+	}
+
+	if cfg.Proxy != "" {
+		proxyURLParsed, err := url.Parse(cfg.Proxy)
+		if err != nil {
+			return nil, closeFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
+		}
+		dialer.Proxy = http.ProxyURL(proxyURLParsed)
+	}
+
+	c, resp, err := dialer.Dial(u.String(), headers)
 	if err != nil {
 		return nil, closeFunc, fmt.Errorf("dial error : %w", err)
 	}
 
-	if respHeader {
+	if cfg.Response {
 		for k, v := range resp.Header {
 			log.Println(k, v)
 		}
@@ -52,7 +79,7 @@ func Connect(uri string, respHeader bool, cfgHeaders []string, auth string) (*we
 
 	closeFunc = func() {
 		if err := c.Close(); err != nil {
-			logger.GlobalLogger.Err(err).Msg("error while closing the connection")
+			logger.GlobalLogger.Debug().Err(err).Msg("error while closing the connection")
 		}
 	}
 
@@ -66,7 +93,7 @@ func basicAuth(auth string) string {
 var blueColor = color.New(color.FgBlue).SprintfFunc()
 var greenColor = color.New(color.FgGreen).SprintfFunc()
 
-func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup) {
+func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance) {
 
 	defer wg.Done()
 
@@ -85,16 +112,18 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup) {
 	for {
 		mt, message, err := conn.ReadMessage()
 		if err != nil {
-			if strings.Contains(err.Error(), "use of closed network connection") {
+			if errors.Is(err, net.ErrClosed) {
 				return
 			}
+
 			logger.GlobalLogger.Err(err).Msg("read error")
+			l.Close()
 			return
 		}
 
 		switch mt {
 		case websocket.TextMessage:
-			log.Println(greenColor("< %s", string(message)))
+			log.Println(greenColor("« %s", string(message)))
 		case websocket.BinaryMessage:
 			log.Println(hex.EncodeToString(message))
 		case websocket.CloseMessage:
@@ -116,4 +145,147 @@ func WriteToServer(conn *websocket.Conn, message string) {
 		}
 	}
 
+}
+
+func getTLSConfig(cfg config.TLS, noCheck bool) *tls.Config {
+
+	if noCheck {
+		return &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
+	caCertPool := processCACert(cfg.CA)
+
+	certificates, err := processCert(cfg.Cert, cfg.Key, cfg.Passphrase)
+	if err != nil {
+		logger.GlobalLogger.Fatal().Err(err).Msg("error while processing client certificate")
+		return nil
+	}
+
+	tlsCfg := &tls.Config{
+		RootCAs:      caCertPool,
+		Certificates: certificates,
+	}
+
+	return tlsCfg
+}
+
+func processCert(certPath, keyPath, passphrase string) ([]tls.Certificate, error) {
+
+	if certPath == "" && keyPath == "" {
+		return nil, nil
+	}
+
+	if certPath != "" && keyPath == "" {
+		return nil, fmt.Errorf("key is required if certificate is provided")
+	}
+
+	cert, err := os.ReadFile(certPath)
+	if err != nil {
+		return nil, fmt.Errorf("error while reading certificate : %w", err)
+	}
+
+	key, err := os.ReadFile(keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("error while reading key : %w", err)
+	}
+
+	dkey, err := decryptPrivateKey(key, []byte(passphrase))
+	if err != nil {
+		return nil, fmt.Errorf("error while decrypting private key with passphrase : %w", err)
+	}
+
+	clientCert, err := tls.X509KeyPair(cert, dkey)
+	if err != nil {
+		return nil, fmt.Errorf("error while creating client certificate : %w", err)
+	}
+
+	return []tls.Certificate{clientCert}, nil
+
+}
+
+func processCACert(caCertPath string) *x509.CertPool {
+
+	if caCertPath == "" {
+		return nil
+	}
+
+	caCert, err := os.ReadFile(caCertPath)
+	if err != nil {
+		logger.GlobalLogger.Fatal().Err(err).Msg("error while reading CA certificate")
+		return nil
+	}
+	caCertPool := x509.NewCertPool()
+
+	ok := caCertPool.AppendCertsFromPEM(caCert)
+	if !ok {
+		logger.GlobalLogger.Fatal().Err(err).Msg("error while parsing CA certificate")
+		return nil
+	}
+
+	return caCertPool
+
+}
+
+func decryptPrivateKey(keyPEM []byte, passphrase []byte) ([]byte, error) {
+	block, _ := pem.Decode(keyPEM)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block")
+	}
+
+	if block.Type == "RSA PRIVATE KEY" || block.Type == "PRIVATE KEY" {
+		// Unencrypted RSA private key
+		return block.Bytes, nil
+	} else if block.Type == "ENCRYPTED PRIVATE KEY" {
+
+		if len(block.Bytes) < 8 {
+			return nil, fmt.Errorf("invalid encrypted private key")
+		}
+		if len(passphrase) == 0 {
+			return nil, fmt.Errorf("passphrase required")
+		}
+		if len(passphrase) > 24 {
+			passphrase = passphrase[:24]
+		}
+
+		c, err := des.NewTripleDESCipher(passphrase)
+		if err != nil {
+			return nil, err
+		}
+		iv := block.Bytes[:8]
+		mode := cipher.NewCBCDecrypter(c, iv)
+		plaintext := make([]byte, len(block.Bytes)-8)
+		mode.CryptBlocks(plaintext, block.Bytes[8:])
+		return plaintext, nil
+
+	} else if block.Type == "AES-256-CBC ENCRYPTED PRIVATE KEY" || block.Type == "AES-128-CBC ENCRYPTED PRIVATE KEY" {
+		// Modern encrypted private key format (AES)
+		block, _ := pem.Decode(keyPEM) // Decode again to get the correct block after checking type
+
+		if block == nil {
+			return nil, fmt.Errorf("failed to decode PEM block")
+		}
+
+		if len(block.Bytes) < 16 {
+			return nil, fmt.Errorf("invalid AES encrypted private key")
+		}
+
+		if len(passphrase) == 0 {
+			return nil, fmt.Errorf("passphrase required")
+		}
+
+		c, err := aes.NewCipher(passphrase) // AES key size depends on your encryption (16, 24, or 32 bytes)
+		if err != nil {
+			return nil, err
+		}
+
+		iv := block.Bytes[:16] // Initialization vector
+		mode := cipher.NewCBCDecrypter(c, iv)
+		plaintext := make([]byte, len(block.Bytes)-16)
+		mode.CryptBlocks(plaintext, block.Bytes[16:])
+		return plaintext, nil
+	} else {
+		return nil, fmt.Errorf("unsupported private key type: %s", block.Type)
+	}
 }

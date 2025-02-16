@@ -10,13 +10,19 @@ import (
 var GlobalLogger *zerolog.Logger
 
 func Init(cfg config.Config) {
-	// Create a console writer with human-readable format
 	consoleWriter := zerolog.ConsoleWriter{
 		Out:     os.Stderr,
 		NoColor: cfg.NoColor,
 	}
 
-	// Create a logger with the console writer
-	l := zerolog.New(consoleWriter).With().Logger()
+	var l zerolog.Logger
+
+	if cfg.Verbose {
+		l = zerolog.New(consoleWriter).With().Logger().Level(zerolog.DebugLevel)
+	} else {
+		l = zerolog.New(consoleWriter).With().Logger().Level(zerolog.InfoLevel)
+	}
+
 	GlobalLogger = &l
+
 }

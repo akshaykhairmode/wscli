@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"os"
 	"sync"
 
 	"github.com/akshaykhairmode/wscli/pkg/batch"
@@ -10,6 +12,9 @@ import (
 )
 
 func main() {
+
+	log.SetOutput(os.Stderr)
+	log.SetFlags(0)
 
 	cfg := config.Get()
 
@@ -22,7 +27,5 @@ func main() {
 		return
 	}
 
-	batch.Process(cfg, wg)
-
-	wg.Wait()
+	batch.Process(cfg)
 }

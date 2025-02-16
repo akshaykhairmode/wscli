@@ -16,34 +16,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Process(cfg config.Config, wg *sync.WaitGroup) {
+func Process(cfg config.Config) {
 
-	conn, closeFunc, err := ws.Connect(cfg.ConnectURL, cfg.Response, cfg.Headers, cfg.Auth)
+	conn, closeFunc, err := ws.Connect(cfg)
 	if err != nil {
 		logger.GlobalLogger.Fatal().Err(err).Msg("error while connecting")
 	}
 
 	defer closeFunc()
 
-	wg.Add(1)
-	go ws.ReadMessages(cfg, conn, wg)
-
-	if cfg.Execute != "" {
-		ws.WriteToServer(conn, cfg.Execute)
-	}
-
-	<-time.After(cfg.Wait)
-
-	if cfg.Stdin {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			ws.WriteToServer(conn, scanner.Text())
-		}
-		return
+	prompt := "\033[31m»\033[0m "
+	if cfg.NoColor {
+		prompt = "» "
 	}
 
 	l, err := readline.NewEx(&readline.Config{
-		Prompt:          "\033[31m»\033[0m ",
+		Prompt:          prompt,
 		HistoryFile:     "/tmp/readline_n.tmp",
 		AutoComplete:    normalCompleter,
 		InterruptPrompt: "^C",
@@ -57,6 +45,28 @@ func Process(cfg config.Config, wg *sync.WaitGroup) {
 	}
 	defer l.Close()
 	l.CaptureExitSignal()
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go ws.ReadMessages(cfg, conn, wg, l)
+
+	if cfg.Execute != "" {
+		ws.WriteToServer(conn, cfg.Execute)
+	}
+
+	<-time.After(cfg.Wait)
+
+	if cfg.Execute != "" && cfg.Wait > 0 {
+		return
+	}
+
+	if cfg.Stdin {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			ws.WriteToServer(conn, scanner.Text())
+		}
+		return
+	}
 
 	log.SetOutput(l.Stderr())
 	log.SetFlags(0)
@@ -86,7 +96,7 @@ func Process(cfg config.Config, wg *sync.WaitGroup) {
 			getPingPongHandler(conn, line, websocket.PingMessage)()
 		case cfg.IsSlash && strings.HasPrefix(line, "/pong"):
 			getPingPongHandler(conn, line, websocket.PongMessage)()
-		case cfg.IsSlash && line == "/close":
+		case cfg.IsSlash && strings.HasPrefix(line, "/close"):
 			closeHandler(line, conn)
 		default:
 			ws.WriteToServer(conn, line)
@@ -94,18 +104,20 @@ func Process(cfg config.Config, wg *sync.WaitGroup) {
 
 	}
 
+	conn.Close()
+
+	wg.Wait()
+
 }
 
 func closeHandler(line string, conn *websocket.Conn) {
 	str := strings.TrimSpace(line[6:])
 	if len(str) > 0 {
 		spl := strings.Split(str, " ")
-		if len(spl) != 2 {
+		if len(spl) < 2 {
 			log.Println("invalid close message, close message must have code and reason")
 			return
 		}
-
-		reason := strings.TrimSpace(spl[1])
 
 		closeCode, err := strconv.Atoi(spl[0])
 		if err != nil {
@@ -113,8 +125,10 @@ func closeHandler(line string, conn *websocket.Conn) {
 			return
 		}
 
+		reason := strings.TrimSpace(strings.Join(spl[1:], " "))
+
 		if err := conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeCode, reason), time.Now().Add(3*time.Second)); err != nil {
-			log.Println(err)
+			logger.GlobalLogger.Err(err).Msg("write close error")
 		}
 	}
 }

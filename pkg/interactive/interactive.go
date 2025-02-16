@@ -36,8 +36,13 @@ func filterInput(r rune) (rune, bool) {
 
 func Process(cfg config.Config, wg *sync.WaitGroup) {
 
+	prompt := "\033[31m»\033[0m "
+	if cfg.NoColor {
+		prompt = "» "
+	}
+
 	l, err := readline.NewEx(&readline.Config{
-		Prompt:          "\033[31m»\033[0m ",
+		Prompt:          prompt,
 		HistoryFile:     "/tmp/readline.tmp",
 		AutoComplete:    completer,
 		InterruptPrompt: "^C",
@@ -80,11 +85,11 @@ func Process(cfg config.Config, wg *sync.WaitGroup) {
 			return
 		case strings.HasPrefix(line, "/connect"):
 			line = strings.TrimSpace(line[8:])
-			conn, _, err := ws.Connect(line, false, cfg.Headers, cfg.Auth)
+			conn, _, err := ws.Connect(cfg)
 			if err != nil {
 				log.Println("connect err,", err)
 			} else {
-				go ws.ReadMessages(cfg, conn, wg)
+				go ws.ReadMessages(cfg, conn, wg, l)
 				log.Println("Connected to ", line)
 			}
 		default:
