@@ -2,6 +2,7 @@ package batch
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -16,39 +17,12 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Process(cfg config.Config) {
-
-	conn, closeFunc, err := ws.Connect(cfg)
-	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while connecting")
-	}
-
-	defer closeFunc()
-
-	prompt := "\033[31m»\033[0m "
-	if cfg.NoColor {
-		prompt = "» "
-	}
-
-	l, err := readline.NewEx(&readline.Config{
-		Prompt:          prompt,
-		HistoryFile:     "/tmp/readline_n.tmp",
-		AutoComplete:    normalCompleter,
-		InterruptPrompt: "^C",
-		EOFPrompt:       "exit",
-
-		HistorySearchFold: true,
-		// FuncFilterInputRune: filterInput,
-	})
-	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while creating readline object")
-	}
-	defer l.Close()
-	l.CaptureExitSignal()
+func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	go ws.ReadMessages(cfg, conn, wg, l)
+	go ws.ReadMessages(cfg, conn, wg, rl)
+	defer wg.Wait()
 
 	if cfg.Execute != "" {
 		ws.WriteToServer(conn, cfg.Execute)
@@ -68,19 +42,26 @@ func Process(cfg config.Config) {
 		return
 	}
 
-	log.SetOutput(l.Stderr())
+	log.SetOutput(rl.Stderr())
 	log.SetFlags(0)
 
+	log.Println(ws.GreenColor("Connected"))
+
+	rl.SetPrompt(fmt.Sprintf("\033[31m(%s)»\033[0m ", truncateString(cfg.ConnectURL, 25)))
+	rl.Refresh()
+
 	for {
-		line, err := l.Readline()
+		line, err := rl.Readline()
 		if err == readline.ErrInterrupt {
 			if len(line) == 0 {
+				conn.Close()
 				break
 			} else {
 				continue
 			}
 		}
 		if err != nil {
+			logger.GlobalLogger.Fatal().Err(err).Msg("error while doing readline")
 			log.Fatal(err)
 		}
 
@@ -104,10 +85,14 @@ func Process(cfg config.Config) {
 
 	}
 
-	conn.Close()
+}
 
-	wg.Wait()
-
+func truncateString(s string, n int) string {
+	r := []rune(s) // Convert to rune slice to handle Unicode correctly
+	if len(r) > n {
+		return string(r[:n]) + "..."
+	}
+	return s
 }
 
 func closeHandler(line string, conn *websocket.Conn) {
@@ -141,10 +126,3 @@ func getPingPongHandler(conn *websocket.Conn, line string, mt int) func() {
 		}
 	}
 }
-
-var normalCompleter = readline.NewPrefixCompleter(
-	readline.PcItem("/exit"),
-	readline.PcItem("/ping"),
-	readline.PcItem("/pong"),
-	readline.PcItem("/close"),
-)

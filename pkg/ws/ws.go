@@ -90,8 +90,8 @@ func basicAuth(auth string) string {
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-var blueColor = color.New(color.FgBlue).SprintfFunc()
-var greenColor = color.New(color.FgGreen).SprintfFunc()
+var BlueColor = color.New(color.FgBlue).SprintfFunc()
+var GreenColor = color.New(color.FgGreen).SprintfFunc()
 
 func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance) {
 
@@ -100,7 +100,7 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l
 	fn := func(what string) func(appData string) error {
 		return func(appData string) error {
 			if cfg.ShowPingPong {
-				log.Println(blueColor("received %s (data: %s)", what, appData))
+				log.Println(BlueColor("received %s (data: %s)", what, appData))
 			}
 			return nil
 		}
@@ -123,7 +123,7 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l
 
 		switch mt {
 		case websocket.TextMessage:
-			log.Println(greenColor("« %s", string(message)))
+			log.Println(GreenColor("« %s", string(message)))
 		case websocket.BinaryMessage:
 			log.Println(hex.EncodeToString(message))
 		case websocket.CloseMessage:
