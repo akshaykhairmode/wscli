@@ -26,13 +26,8 @@ func main() {
 
 	logger.Init(cfg)
 
-	prompt := "\033[31m»\033[0m "
-	if cfg.NoColor {
-		prompt = "» "
-	}
-
 	readlineConfig := &readline.Config{
-		Prompt:          prompt,
+		Prompt:          batch.GetPrompt(cfg, "» "),
 		AutoComplete:    completer,
 		HistoryFile:     getHistoryFilePath("wscli"),
 		InterruptPrompt: "^C",

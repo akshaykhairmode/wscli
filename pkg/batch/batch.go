@@ -46,7 +46,7 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 
 	log.Println(ws.GreenColor("Connected"))
 
-	rl.SetPrompt(fmt.Sprintf("\033[31m(%s)»\033[0m ", truncateString(cfg.ConnectURL, 25)))
+	rl.SetPrompt(GetPrompt(cfg, fmt.Sprintf("(%s)»", truncateString(cfg.ConnectURL, 25))))
 	rl.Refresh()
 
 	for {
@@ -84,6 +84,14 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 
 	}
 
+}
+
+func GetPrompt(cfg config.Config, str string) string {
+	if cfg.NoColor {
+		return str
+	}
+
+	return fmt.Sprintf("\033[31m%s\033[0m ", str)
 }
 
 func truncateString(s string, n int) string {

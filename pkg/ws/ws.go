@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -127,7 +128,7 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l
 
 		switch mt {
 		case websocket.TextMessage:
-			log.Println(GreenColor("« %s", string(message)))
+			log.Println(formatMessage(cfg, message))
 		case websocket.BinaryMessage:
 			log.Println(hex.EncodeToString(message))
 		case websocket.CloseMessage:
@@ -137,6 +138,27 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l
 
 	}
 
+}
+
+func formatMessage(cfg config.Config, message []byte) string {
+
+	if !cfg.JSONPrettyPrint {
+		return GreenColor("« %s", message)
+	}
+
+	m := map[string]any{}
+	if err := json.Unmarshal(message, &m); err != nil {
+		logger.GlobalLogger.Debug().Err(err).Msg("UNMARSHAL ERR")
+		return GreenColor("« %s", message)
+	}
+
+	jenc, err := json.MarshalIndent(m, "", " ")
+	if err != nil {
+		logger.GlobalLogger.Debug().Err(err).Msg("MARSHALINDENT ERR")
+		return GreenColor("« %s", message)
+	}
+
+	return GreenColor("%s", jenc)
 }
 
 func WriteToServer(conn *websocket.Conn, message string) {
