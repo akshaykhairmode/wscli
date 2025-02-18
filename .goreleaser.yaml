@@ -15,6 +15,11 @@ builds:
     goarch:
       - amd64
       - arm64
+      - arm
+    ldflags:
+      - -s -w # Optional: Strips debug information and reduces binary size
+      - -X main.CLIVersion={{.Tag}} # Sets the main.version variable to the Git tag
+    # ... other build configurations
 
 archives:
   - format: tar.gz

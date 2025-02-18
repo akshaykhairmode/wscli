@@ -17,6 +17,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var CLIVersion string
+
 func main() {
 
 	log.SetOutput(os.Stderr)
@@ -25,6 +27,11 @@ func main() {
 	cfg := config.Get()
 
 	logger.Init(cfg)
+
+	if cfg.Version {
+		logger.GlobalLogger.Info().Msgf("CLI Version : %s", CLIVersion)
+		return
+	}
 
 	readlineConfig := &readline.Config{
 		Prompt:          batch.GetPrompt(cfg, "» "),
