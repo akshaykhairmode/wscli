@@ -13,7 +13,7 @@ type Config struct {
 	Auth        string
 	Headers     []string
 	Origin      string
-	Execute     string
+	Execute     []string
 	Wait        time.Duration
 	SubProtocol []string
 	Proxy       string
@@ -58,7 +58,7 @@ func Get() Config {
 	pflag.StringVar(&cfg.Auth, "auth", "", "pass the HTTP basic auth")
 	pflag.StringSliceVarP(&cfg.Headers, "header", "H", []string{}, "pass headers in key:value format, use -H multiple times to pass multiple values, commas also work")
 	pflag.StringVarP(&cfg.Origin, "origin", "o", "", "optional, pass the origin for the websocket connection")
-	pflag.StringVarP(&cfg.Execute, "execute", "x", "", "optional, pass the command to execute")
+	pflag.StringSliceVarP(&cfg.Execute, "execute", "x", []string{}, "optional, pass the command to execute")
 	pflag.DurationVarP(&cfg.Wait, "wait", "w", 0, "optional, pass the wait time after executing the command, example 1s, 1m, 1h")
 	pflag.StringSliceVarP(&cfg.SubProtocol, "sub-protocol", "s", []string{}, "optional, pass the sub-protocol for the websocket connection")
 

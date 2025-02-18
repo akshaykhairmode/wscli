@@ -11,8 +11,10 @@ var GlobalLogger *zerolog.Logger
 
 func Init(cfg config.Config) {
 	consoleWriter := zerolog.ConsoleWriter{
-		Out:     os.Stderr,
-		NoColor: cfg.NoColor,
+		Out:             os.Stderr,
+		NoColor:         cfg.NoColor,
+		FormatTimestamp: func(i interface{}) string { return "" },
+		// FormatMessage:   func(i interface{}) string { return "" },
 	}
 
 	var l zerolog.Logger

@@ -22,15 +22,14 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go ws.ReadMessages(cfg, conn, wg, rl)
-	defer wg.Wait()
 
-	if cfg.Execute != "" {
-		ws.WriteToServer(conn, cfg.Execute)
+	for _, cmd := range cfg.Execute {
+		ws.WriteToServer(conn, cmd)
 	}
 
 	<-time.After(cfg.Wait)
 
-	if cfg.Execute != "" && cfg.Wait > 0 {
+	if len(cfg.Execute) > 0 && cfg.Wait > 0 {
 		return
 	}
 

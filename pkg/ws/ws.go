@@ -30,6 +30,10 @@ func Connect(cfg config.Config) (*websocket.Conn, func(), error) {
 
 	closeFunc := func() {}
 
+	if cfg.ConnectURL == "" {
+		return nil, closeFunc, fmt.Errorf("connect url is empty")
+	}
+
 	u, err := url.Parse(cfg.ConnectURL)
 	if err != nil {
 		return nil, closeFunc, fmt.Errorf("error while passing the url : %w", err)

@@ -50,7 +50,7 @@ func main() {
 
 	conn, closeFunc, err := ws.Connect(cfg)
 	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while connecting")
+		logger.GlobalLogger.Fatal().Err(err).Msg("CONNECT ERR")
 	}
 
 	defer closeFunc()
