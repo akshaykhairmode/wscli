@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -90,10 +89,10 @@ var completer = readline.NewPrefixCompleter(
 	),
 )
 
-func usage(w io.Writer) {
-	io.WriteString(w, "commands:\n")
-	io.WriteString(w, completer.Tree("    "))
-}
+// func usage(w io.Writer) {
+// 	io.WriteString(w, "commands:\n")
+// 	io.WriteString(w, completer.Tree("    "))
+// }
 
 func getHistoryFilePath(appName string) string {
 
