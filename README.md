@@ -45,4 +45,6 @@ A Go command-line tool for interacting with WebSocket servers.  It's designed fo
 ## TODO
 
 * **Enhanced Slash Commands:** Implement additional slash commands, such as reading binary files from a path and sending them to the server.
+* **gzip support:** Support for gzip responses.
 * **Basic Load Generation:** Add basic load generation capabilities from interactive mode using slash commands.
+* **Listener:** Add listener to start websocket server.
