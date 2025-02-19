@@ -26,6 +26,7 @@ type Config struct {
 	NoColor            bool
 	Response           bool
 	JSONPrettyPrint    bool
+	IsBinary           bool
 
 	Help          bool
 	IsInteractive bool
@@ -54,6 +55,7 @@ func Get() Config {
 	pflag.BoolVarP(&cfg.Response, "response", "r", false, "pass true if you want to see the http response headers from the server")
 	pflag.BoolVarP(&cfg.Stdin, "stdin", "i", false, "pass true if you want to read from stdin")
 	pflag.BoolVar(&cfg.JSONPrettyPrint, "jspp", false, "pass true if you want to parse the response into json and pretty print")
+	pflag.BoolVarP(&cfg.IsBinary, "binary", "b", false, "pass if you are sending binary data.")
 
 	pflag.StringVarP(&cfg.ConnectURL, "connect", "c", "", "pass the connection url for the websocket")
 	pflag.StringVar(&cfg.Proxy, "proxy", "", "pass the proxy url")

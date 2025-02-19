@@ -161,14 +161,26 @@ func formatMessage(cfg config.Config, message []byte) string {
 	return GreenColor("%s", jenc)
 }
 
-func WriteToServer(conn *websocket.Conn, message string) {
+func WriteToServer(conn *websocket.Conn, cfg config.Config, message string) {
 
 	if conn == nil {
 		logger.GlobalLogger.Error().Msg("Connection is nil")
-	} else {
+		return
+	}
+
+	if !cfg.IsBinary {
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 			logger.GlobalLogger.Err(err).Msg("write error")
 		}
+	}
+
+	dec, err := hex.DecodeString(message)
+	if err != nil {
+		logger.GlobalLogger.Err(err).Msg("error while doing decode string")
+		return
+	}
+	if err := conn.WriteMessage(websocket.BinaryMessage, dec); err != nil {
+		logger.GlobalLogger.Err(err).Msg("write error")
 	}
 
 }

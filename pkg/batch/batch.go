@@ -24,7 +24,7 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 	go ws.ReadMessages(cfg, conn, wg, rl)
 
 	for _, cmd := range cfg.Execute {
-		ws.WriteToServer(conn, cmd)
+		ws.WriteToServer(conn, cfg, cmd)
 	}
 
 	<-time.After(cfg.Wait)
@@ -36,7 +36,7 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 	if cfg.Stdin {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			ws.WriteToServer(conn, scanner.Text())
+			ws.WriteToServer(conn, cfg, scanner.Text())
 		}
 		return
 	}
@@ -79,7 +79,7 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 		case cfg.IsSlash && strings.HasPrefix(line, "/close"):
 			closeHandler(line, conn)
 		default:
-			ws.WriteToServer(conn, line)
+			ws.WriteToServer(conn, cfg, line)
 		}
 
 	}
