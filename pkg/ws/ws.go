@@ -27,21 +27,21 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Connect(cfg config.Config) (*websocket.Conn, func(), error) {
+func Connect() (*websocket.Conn, func(), error) {
 
 	closeFunc := func() {}
 
-	if cfg.ConnectURL == "" {
+	if config.Flags.GetConnectURL() == "" {
 		return nil, closeFunc, fmt.Errorf("connect url is empty")
 	}
 
-	u, err := url.Parse(cfg.ConnectURL)
+	u, err := url.Parse(config.Flags.GetConnectURL())
 	if err != nil {
 		return nil, closeFunc, fmt.Errorf("error while passing the url : %w", err)
 	}
 
 	headers := http.Header{}
-	for _, h := range cfg.Headers {
+	for _, h := range config.Flags.GetHeaders() {
 		headSpl := strings.Split(h, ":")
 		if len(headSpl) != 2 {
 			return nil, closeFunc, fmt.Errorf("invalid header : %s", h)
@@ -49,21 +49,21 @@ func Connect(cfg config.Config) (*websocket.Conn, func(), error) {
 		headers.Set(headSpl[0], headSpl[1])
 	}
 
-	if cfg.Origin != "" {
-		headers.Set("Origin", cfg.Origin)
+	if config.Flags.GetOrigin() != "" {
+		headers.Set("Origin", config.Flags.GetOrigin())
 	}
 
-	if cfg.Auth != "" {
-		headers.Set("Authorization", basicAuth(cfg.Auth))
+	if config.Flags.GetAuth() != "" {
+		headers.Set("Authorization", basicAuth(config.Flags.GetAuth()))
 	}
 
 	dialer := websocket.Dialer{
-		Subprotocols:    cfg.SubProtocol,
-		TLSClientConfig: getTLSConfig(cfg.TLS, cfg.NoCertificateCheck),
+		Subprotocols:    config.Flags.GetSubProtocol(),
+		TLSClientConfig: getTLSConfig(),
 	}
 
-	if cfg.Proxy != "" {
-		proxyURLParsed, err := url.Parse(cfg.Proxy)
+	if config.Flags.GetProxy() != "" {
+		proxyURLParsed, err := url.Parse(config.Flags.GetProxy())
 		if err != nil {
 			return nil, closeFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
 		}
@@ -75,7 +75,7 @@ func Connect(cfg config.Config) (*websocket.Conn, func(), error) {
 		return nil, closeFunc, fmt.Errorf("dial error : %w", err)
 	}
 
-	if cfg.Response {
+	if config.Flags.ShowResponseHeaders() {
 		for k, v := range resp.Header {
 			log.Println(k, v)
 		}
@@ -98,13 +98,13 @@ func basicAuth(auth string) string {
 var BlueColor = color.New(color.FgBlue).SprintfFunc()
 var GreenColor = color.New(color.FgGreen).SprintfFunc()
 
-func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance) {
+func ReadMessages(conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance) {
 
 	defer wg.Done()
 
 	fn := func(what string) func(appData string) error {
 		return func(appData string) error {
-			if cfg.ShowPingPong {
+			if config.Flags.ShowPingPong() {
 				log.Println(BlueColor("received %s (data: %s)", what, appData))
 			}
 			return nil
@@ -128,7 +128,7 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l
 
 		switch mt {
 		case websocket.TextMessage:
-			log.Println(formatMessage(cfg, message))
+			log.Println(formatMessage(message))
 		case websocket.BinaryMessage:
 			log.Println(hex.EncodeToString(message))
 		case websocket.CloseMessage:
@@ -140,9 +140,9 @@ func ReadMessages(cfg config.Config, conn *websocket.Conn, wg *sync.WaitGroup, l
 
 }
 
-func formatMessage(cfg config.Config, message []byte) string {
+func formatMessage(message []byte) string {
 
-	if !cfg.JSONPrettyPrint {
+	if !config.Flags.IsJSONPrettyPrint() {
 		return GreenColor("« %s", message)
 	}
 
@@ -161,17 +161,18 @@ func formatMessage(cfg config.Config, message []byte) string {
 	return GreenColor("%s", jenc)
 }
 
-func WriteToServer(conn *websocket.Conn, cfg config.Config, message string) {
+func WriteToServer(conn *websocket.Conn, message string) {
 
 	if conn == nil {
 		logger.GlobalLogger.Error().Msg("Connection is nil")
 		return
 	}
 
-	if !cfg.IsBinary {
+	if !config.Flags.IsBinary() {
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 			logger.GlobalLogger.Err(err).Msg("write error")
 		}
+		return
 	}
 
 	dec, err := hex.DecodeString(message)
@@ -185,28 +186,28 @@ func WriteToServer(conn *websocket.Conn, cfg config.Config, message string) {
 
 }
 
-func getTLSConfig(cfg config.TLS, noCheck bool) *tls.Config {
+func getTLSConfig() *tls.Config {
 
-	if noCheck {
+	if config.Flags.SkipCertificateCheck() {
 		return &tls.Config{
 			InsecureSkipVerify: true,
 		}
 	}
 
-	caCertPool := processCACert(cfg.CA)
+	tlsCfg := config.Flags.GetTLS()
 
-	certificates, err := processCert(cfg.Cert, cfg.Key, cfg.Passphrase)
+	caCertPool := processCACert(tlsCfg.CA)
+
+	certificates, err := processCert(tlsCfg.Cert, tlsCfg.Key, tlsCfg.Passphrase)
 	if err != nil {
 		logger.GlobalLogger.Fatal().Err(err).Msg("error while processing client certificate")
 		return nil
 	}
 
-	tlsCfg := &tls.Config{
+	return &tls.Config{
 		RootCAs:      caCertPool,
 		Certificates: certificates,
 	}
-
-	return tlsCfg
 }
 
 func processCert(certPath, keyPath, passphrase string) ([]tls.Certificate, error) {

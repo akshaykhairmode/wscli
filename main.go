@@ -18,22 +18,22 @@ import (
 
 var CLIVersion string
 
-func main() {
-
+func init() {
 	log.SetOutput(os.Stderr)
 	log.SetFlags(0)
+}
 
-	cfg := config.Get()
+func main() {
 
-	logger.Init(cfg)
+	logger.Init()
 
-	if cfg.Version {
+	if config.Flags.IsShowVersion() {
 		logger.GlobalLogger.Info().Msgf("CLI Version : %s", CLIVersion)
 		return
 	}
 
 	readlineConfig := &readline.Config{
-		Prompt:          batch.GetPrompt(cfg, "» "),
+		Prompt:          batch.GetPrompt("» "),
 		AutoComplete:    completer,
 		HistoryFile:     getHistoryFilePath("wscli"),
 		InterruptPrompt: "^C",
@@ -49,20 +49,20 @@ func main() {
 
 	defer rl.Close()
 
-	conn, closeFunc, err := ws.Connect(cfg)
+	conn, closeFunc, err := ws.Connect()
 	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("CONNECT ERR")
+		logger.GlobalLogger.Fatal().Err(err).Msg("connect err")
 	}
 
 	defer closeFunc()
 
-	if !cfg.Stdin {
+	if !config.Flags.IsStdin() {
 		rl.CaptureExitSignal()
 	} else {
 		go catchSignals(conn)
 	}
 
-	batch.Process(conn, cfg, rl)
+	batch.Process(conn, rl)
 }
 
 func catchSignals(conn *websocket.Conn) {
@@ -84,9 +84,8 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("/pong"),
 	readline.PcItem("/wait"),
 	readline.PcItem("/help"),
-	readline.PcItem("/print",
-		readline.PcItem("host"),
-	),
+	readline.PcItem("/flags"),
+	readline.PcItem("/print"),
 )
 
 // func usage(w io.Writer) {

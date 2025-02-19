@@ -17,26 +17,26 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
+func Process(conn *websocket.Conn, rl *readline.Instance) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	go ws.ReadMessages(cfg, conn, wg, rl)
+	go ws.ReadMessages(conn, wg, rl)
 
-	for _, cmd := range cfg.Execute {
-		ws.WriteToServer(conn, cfg, cmd)
+	for _, cmd := range config.Flags.GetExecute() {
+		ws.WriteToServer(conn, cmd)
 	}
 
-	<-time.After(cfg.Wait)
+	<-time.After(config.Flags.GetWait())
 
-	if len(cfg.Execute) > 0 && cfg.Wait > 0 {
+	if len(config.Flags.GetExecute()) > 0 && config.Flags.GetWait() > 0 {
 		return
 	}
 
-	if cfg.Stdin {
+	if config.Flags.IsStdin() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			ws.WriteToServer(conn, cfg, scanner.Text())
+			ws.WriteToServer(conn, scanner.Text())
 		}
 		return
 	}
@@ -46,7 +46,7 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 
 	log.Println(ws.GreenColor("Connected"))
 
-	rl.SetPrompt(GetPrompt(cfg, fmt.Sprintf("(%s)»", truncateString(cfg.ConnectURL, 25))))
+	rl.SetPrompt(GetPrompt(fmt.Sprintf("(%s)»", truncateString(config.Flags.GetConnectURL(), 25))))
 	rl.Refresh()
 
 	for {
@@ -72,22 +72,24 @@ func Process(conn *websocket.Conn, cfg config.Config, rl *readline.Instance) {
 		switch {
 		case line == "/exit" || line == "exit":
 			return
-		case cfg.IsSlash && strings.HasPrefix(line, "/ping"):
+		case config.Flags.IsSlash() && strings.HasPrefix(line, "/flags"):
+			log.Println(config.Flags.String())
+		case config.Flags.IsSlash() && strings.HasPrefix(line, "/ping"):
 			getPingPongHandler(conn, line, websocket.PingMessage)()
-		case cfg.IsSlash && strings.HasPrefix(line, "/pong"):
+		case config.Flags.IsSlash() && strings.HasPrefix(line, "/pong"):
 			getPingPongHandler(conn, line, websocket.PongMessage)()
-		case cfg.IsSlash && strings.HasPrefix(line, "/close"):
+		case config.Flags.IsSlash() && strings.HasPrefix(line, "/close"):
 			closeHandler(line, conn)
 		default:
-			ws.WriteToServer(conn, cfg, line)
+			ws.WriteToServer(conn, line)
 		}
 
 	}
 
 }
 
-func GetPrompt(cfg config.Config, str string) string {
-	if cfg.NoColor {
+func GetPrompt(str string) string {
+	if config.Flags.IsNoColor() {
 		return str
 	}
 
