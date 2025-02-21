@@ -2,7 +2,6 @@ version: 1
 
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
 
 builds:
@@ -18,8 +17,7 @@ builds:
       - arm
     ldflags:
       - -s -w # Optional: Strips debug information and reduces binary size
-      - -X main.CLIVersion={{.Tag}} # Sets the main.version variable to the Git tag
-    # ... other build configurations
+      - -X main.CLIVersion={{.Tag}}
 
 archives:
   - format: tar.gz

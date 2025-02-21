@@ -1,30 +1,44 @@
-
 # wscli
 
-A Go command-line tool for interacting with WebSocket servers.  It's designed for testing and scripting, offering similar functionality to `wscat` with some enhancements.  This tool is currently under active development.
+A Go command-line tool for interacting with WebSocket servers. Designed for testing and scripting, it offers functionality similar to `wscat`, with enhancements. This tool is actively developed.
+
+## Installation
+
+```sh
+go install github.com/akshaykhairmode/wscli@latest
+```
+
+Don't have Go installed? Download binaries from the [releases page](https://github.com/akshaykhairmode/wscli/releases).
 
 ## Features
 
-* **Native Binaries:**  Distributable and easy to install.
-* **Piped Input:** Use the `--stdin` flag to pipe input to the WebSocket server.  Note: Interactive terminal features are not available when using piped input.
-* **Multiple Messages on Connect:** Send a series of messages immediately upon establishing the connection.
-* **Background Execution:**
-    * Run in the background using `nohup` (redirect output to `nohup.out` and use `-w` to wait for messages). Example: `nohup wscli -c ws://localhost/ws -w 1s > nohup.out 2>&1 &`
-    * Redirect output and run in the background. Example: `wscli -c ws://localhost/ws >> output.txt & 2>&1`
-* **History Persistence:**  Maintain a history of commands for easy reuse.
-* **Command Execution on Connect:** Use the `-x` flag (multiple times for multiple commands) to execute commands immediately after connection.  An interactive terminal will open after the commands are executed.
-* **JSON Pretty Printing:** Format server responses as nicely formatted JSON using the `--jspp` flag.
-* **Terminal Shortcuts:** Utilize standard terminal shortcuts like Ctrl+W (delete word) and Ctrl+R (reverse search).  A full list of available readline shortcuts can be found [here](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
+- **Native Binaries:** Distributable and easy to install.
+- **Piped Input:** Use the `--stdin` flag to pipe input to the WebSocket server. _(Note: Interactive terminal features are unavailable when using piped input.)_
+- **Multiple Messages on Connect:** Send a series of messages immediately upon establishing the connection.
+- **Background Execution:**
+  - Run in the background using `nohup` (redirect output to `nohup.out` and use `-w` to wait for messages).
+    ```sh
+    nohup wscli -c ws://localhost/ws -w 1s > nohup.out 2>&1 &
+    ```
+  - Redirect output and run in the background.
+    ```sh
+    wscli -c ws://localhost/ws >> output.txt & 2>&1
+    ```
+- **History Persistence:** Maintain a history of commands for easy reuse.
+- **Command Execution on Connect:** Use the `-x` flag (multiple times for multiple commands) to execute commands immediately after connection. An interactive terminal will open after execution.
+- **JSON Pretty Printing:** Format server responses as nicely formatted JSON using the `--jspp` flag.
+- **Terminal Shortcuts:** Utilize standard terminal shortcuts like `Ctrl+W` (delete word) and `Ctrl+R` (reverse search). A full list of available readline shortcuts can be found [here](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
 
 ## Available Flags
 
 | Flag | Shorthand | Description |
-|---|---|---|
+|------|----------|-------------|
 | `--auth` |  | HTTP Basic Authentication credentials (e.g., `username:password`). |
 | `--ca` |  | Path to the CA certificate file (optional). |
 | `--cert` |  | Path to the client certificate file (optional). |
 | `--connect` | `-c` | WebSocket connection URL. |
 | `--execute` | `-x` | Command to execute after connection (can be used multiple times). |
+| `--gzipr` | | If messages from server are gzip encoded, use this option. _(Note: The server must send messages as binary.)_ |
 | `--header` | `-H` | Custom header in `key:value` format (can be used multiple times, commas are also supported for multiple values). |
 | `--help` | `-h` | Display help information. |
 | `--jspp` |  | Enable JSON pretty printing for responses. |
@@ -44,7 +58,6 @@ A Go command-line tool for interacting with WebSocket servers.  It's designed fo
 
 ## TODO
 
-* **Enhanced Slash Commands:** Implement additional slash commands, such as reading binary files from a path and sending them to the server.
-* **gzip support:** Support for gzip responses.
-* **Basic Load Generation:** Add basic load generation capabilities from interactive mode using slash commands.
-* **Listener:** Add listener to start websocket server.
+- **Enhanced Slash Commands:** Implement additional slash commands, such as reading binary files from a path and sending them to the server.
+- **Basic Load Generation:** Add basic load generation capabilities from interactive mode using slash commands.
+- **Listener:** Add functionality to start a WebSocket server.
