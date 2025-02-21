@@ -1,63 +1,72 @@
 # wscli
 
-A Go command-line tool for interacting with WebSocket servers. Designed for testing and scripting, it offers functionality similar to `wscat`, with enhancements. This tool is actively developed.
+A lightweight and powerful Go command-line tool for interacting with WebSocket servers. Designed for testing, debugging, and scripting, `wscli` provides functionality similar to `wscat` but with additional features. This tool is actively developed.
 
-## Installation
+## 🚀 Installation
 
+### Using `go install`
 ```sh
 go install github.com/akshaykhairmode/wscli@latest
 ```
 
-Don't have Go installed? Download binaries from the [releases page](https://github.com/akshaykhairmode/wscli/releases).
+### Download Prebuilt Binaries
+If you don’t have Go installed, download the latest binaries from the [Releases Page](https://github.com/akshaykhairmode/wscli/releases).
 
-## Features
+## 🔧 Usage
 
-- **Native Binaries:** Distributable and easy to install.
-- **Piped Input:** Use the `--stdin` flag to pipe input to the WebSocket server. _(Note: Interactive terminal features are unavailable when using piped input.)_
-- **Multiple Messages on Connect:** Send a series of messages immediately upon establishing the connection.
-- **Background Execution:**
-  - Run in the background using `nohup` (redirect output to `nohup.out` and use `-w` to wait for messages).
+To quickly connect to a WebSocket server:
+```sh
+wscli -c ws://localhost:8080/ws
+```
+
+## ✨ Features
+
+- **🔹 Native Binaries:** Distributable and easy to install across systems.
+- **📤 Piped Input:** Send piped input using the `--stdin` flag. _(Note: Interactive terminal features are disabled when using this mode.)_
+- **📨 Multiple Messages on Connect:** Send multiple messages immediately after connecting.
+- **🎭 Background Execution:**
+  - Run `wscli` in the background using `nohup`:
     ```sh
     nohup wscli -c ws://localhost/ws -w 1s > nohup.out 2>&1 &
     ```
-  - Redirect output and run in the background.
+  - Redirect output and run in the background:
     ```sh
     wscli -c ws://localhost/ws >> output.txt & 2>&1
     ```
-- **History Persistence:** Maintain a history of commands for easy reuse.
-- **Command Execution on Connect:** Use the `-x` flag (multiple times for multiple commands) to execute commands immediately after connection. An interactive terminal will open after execution.
-- **JSON Pretty Printing:** Format server responses as nicely formatted JSON using the `--jspp` flag.
-- **Terminal Shortcuts:** Utilize standard terminal shortcuts like `Ctrl+W` (delete word) and `Ctrl+R` (reverse search). A full list of available readline shortcuts can be found [here](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
+- **📜 History Persistence:** Maintain a command history for quick reuse.
+- **⚡ Command Execution on Connect:** Use `-x` to execute commands automatically after connection.
+- **📌 JSON Pretty Printing:** Format JSON responses with the `--jspp` flag.
+- **⌨️ Terminal Shortcuts:** Supports readline shortcuts like `Ctrl+W` (delete word) and `Ctrl+R` (reverse search). [See full list](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
 
-## Available Flags
+## 🛠 Available Flags
 
-| Flag | Shorthand | Description |
-|------|----------|-------------|
-| `--auth` |  | HTTP Basic Authentication credentials (e.g., `username:password`). |
-| `--ca` |  | Path to the CA certificate file (optional). |
-| `--cert` |  | Path to the client certificate file (optional). |
-| `--connect` | `-c` | WebSocket connection URL. |
-| `--execute` | `-x` | Command to execute after connection (can be used multiple times). |
-| `--gzipr` | | If messages from server are gzip encoded, use this option. _(Note: The server must send messages as binary.)_ |
-| `--header` | `-H` | Custom header in `key:value` format (can be used multiple times, commas are also supported for multiple values). |
-| `--help` | `-h` | Display help information. |
-| `--jspp` |  | Enable JSON pretty printing for responses. |
-| `--key` |  | Path to the certificate key file (optional). |
-| `--no-check` | `-n` | Disable certificate verification. |
-| `--no-color` |  | Disable colored output. |
-| `--origin` | `-o` | Origin for the WebSocket connection (optional). |
-| `--proxy` |  | Proxy URL. |
-| `--response` | `-r` | Display HTTP response headers from the server. |
+| Flag             | Shorthand | Description |
+|-----------------|----------|-------------|
+| `--auth`        |          | HTTP Basic Authentication credentials (e.g., `username:password`). |
+| `--ca`         |          | Path to the CA certificate file (optional). |
+| `--cert`       |          | Path to the client certificate file (optional). |
+| `--connect`    | `-c`     | WebSocket connection URL. |
+| `--execute`    | `-x`     | Execute a command after connecting (use multiple times for multiple commands). |
+| `--gzipr`      |          | Enable gzip decoding if server messages are gzip-encoded. _(Note: Server must send messages as binary.)_ |
+| `--header`     | `-H`     | Custom headers (`key:value`, can be used multiple times). |
+| `--help`       | `-h`     | Display help information. |
+| `--jspp`       |          | Enable JSON pretty printing for responses. |
+| `--key`        |          | Path to the certificate key file (optional). |
+| `--no-check`   | `-n`     | Disable TLS certificate verification. |
+| `--no-color`   |          | Disable colored output. |
+| `--origin`     | `-o`     | Specify origin for the WebSocket connection (optional). |
+| `--proxy`      |          | Use a proxy URL. |
+| `--response`   | `-r`     | Display HTTP response headers from the server. |
 | `--show-ping-pong` | `-P` | Show ping/pong messages. |
-| `--slash` |  | Enable slash commands (currently under development). |
-| `--stdin` | `-i` | Read input from stdin. |
-| `--sub-protocol` | `-s` | Sub-protocol for the WebSocket connection (optional, can be used multiple times). |
-| `--verbose` | `-v` | Enable debug logging. |
-| `--version` | `-V` | Display version information. |
-| `--wait` | `-w` | Wait time after command execution (e.g., `1s`, `1m`, `1h`). |
+| `--slash`      |          | Enable slash commands _(Experimental)_. |
+| `--stdin`      | `-i`     | Read input from stdin. |
+| `--sub-protocol` | `-s`   | Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times). |
+| `--verbose`    | `-v`     | Enable debug logging. |
+| `--version`    | `-V`     | Display version information. |
+| `--wait`       | `-w`     | Wait time after command execution (`1s`, `1m`, `1h`). |
 
-## TODO
+## 🚧 Upcoming Features (TODO)
 
-- **Enhanced Slash Commands:** Implement additional slash commands, such as reading binary files from a path and sending them to the server.
-- **Basic Load Generation:** Add basic load generation capabilities from interactive mode using slash commands.
-- **Listener:** Add functionality to start a WebSocket server.
+- **Enhanced Slash Commands:** Ability to read binary files and send them to the server.
+- **Basic Load Generation:** Support for load testing via interactive mode.
+- **WebSocket Listener:** Implement a feature to start a WebSocket server.
