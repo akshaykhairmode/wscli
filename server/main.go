@@ -2,6 +2,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"log"
@@ -36,6 +38,15 @@ func newUpgrader() *websocket.Upgrader {
 	})
 	u.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {
 
+		if string(data) == "zip" {
+			zipData, err := zipStringToGzipBytes("hello, this is zipped data")
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			c.WriteMessage(websocket.BinaryMessage, zipData)
+		}
+
 		log.Println(messageType, string(data))
 		// echo
 		fmt.Println("OnMessage:", messageType, string(data))
@@ -46,6 +57,20 @@ func newUpgrader() *websocket.Upgrader {
 	})
 
 	return u
+}
+
+func zipStringToGzipBytes(input string) ([]byte, error) {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	_, err := gz.Write([]byte(input))
+	if err != nil {
+		return nil, fmt.Errorf("failed to write gzip data: %w", err)
+	}
+	err = gz.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed to close gzip writer: %w", err)
+	}
+	return b.Bytes(), nil
 }
 
 func onWebsocket(w http.ResponseWriter, r *http.Request) {

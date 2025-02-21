@@ -30,6 +30,7 @@ type Flag struct {
 	shouldShowResponseHeaders bool
 	isJSONPrettyPrint         bool
 	isBinary                  bool
+	isGzipResponse            bool
 
 	help          bool
 	isInteractive bool
@@ -69,6 +70,7 @@ func Get() *Flag {
 	pflag.BoolVarP(&cfg.isSTDin, "stdin", "i", false, "pass true if you want to read from stdin")
 	pflag.BoolVar(&cfg.isJSONPrettyPrint, "jspp", false, "pass true if you want to parse the response into json and pretty print")
 	pflag.BoolVarP(&cfg.isBinary, "binary", "b", false, "pass if you are sending binary data.")
+	pflag.BoolVar(&cfg.isGzipResponse, "gzipr", false, "pass if you are receiving gzip data and need it decoded and printed")
 
 	pflag.StringVarP(&cfg.connectURL, "connect", "c", "", "pass the connection url for the websocket")
 	pflag.StringVar(&cfg.proxy, "proxy", "", "pass the proxy url")
@@ -122,6 +124,7 @@ func (c *Flag) String() string {
 	sb.WriteString(fmt.Sprintf("  shouldShowResponseHeaders: %t\n", c.shouldShowResponseHeaders))
 	sb.WriteString(fmt.Sprintf("  isJSONPrettyPrint: %t\n", c.isJSONPrettyPrint))
 	sb.WriteString(fmt.Sprintf("  isBinary: %t\n", c.isBinary))
+	sb.WriteString(fmt.Sprintf("  isGzipResponse: %t\n", c.isGzipResponse))
 
 	sb.WriteString(fmt.Sprintf("  help: %t\n", c.help))
 	sb.WriteString(fmt.Sprintf("  isInteractive: %t\n", c.isInteractive))

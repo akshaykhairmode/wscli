@@ -1,6 +1,8 @@
 package ws
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
@@ -12,6 +14,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -19,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
@@ -88,7 +92,15 @@ func Connect() (*websocket.Conn, func(), error) {
 		}
 	}
 
+	go pingWorker(c)
+
 	return c, closeFunc, nil
+}
+
+func pingWorker(c *websocket.Conn) {
+	for range time.Tick(5 * time.Second) {
+		c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
+	}
 }
 
 func basicAuth(auth string) string {
@@ -130,7 +142,16 @@ func ReadMessages(conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance
 		case websocket.TextMessage:
 			log.Println(formatMessage(message))
 		case websocket.BinaryMessage:
-			log.Println(hex.EncodeToString(message))
+			if config.Flags.IsGzipResponse() {
+				gzBytes, err := unzipGzipBytes(message)
+				if err != nil {
+					logger.GlobalLogger.Err(err).Msg("error while unzipping bytes")
+				} else {
+					log.Println(gzBytes)
+				}
+			} else {
+				log.Println(hex.EncodeToString(message))
+			}
 		case websocket.CloseMessage:
 			log.Println("received close message", message)
 			return
@@ -138,6 +159,22 @@ func ReadMessages(conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance
 
 	}
 
+}
+
+func unzipGzipBytes(gzipBytes []byte) (string, error) {
+	reader := bytes.NewReader(gzipBytes)
+	gzipReader, err := gzip.NewReader(reader)
+	if err != nil {
+		return "", fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzipReader.Close()
+
+	unzippedBytes, err := io.ReadAll(gzipReader)
+	if err != nil {
+		return "", fmt.Errorf("failed to read unzipped data: %w", err)
+	}
+
+	return string(unzippedBytes), nil
 }
 
 func formatMessage(message []byte) string {

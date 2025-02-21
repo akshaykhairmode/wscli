@@ -242,6 +242,18 @@ func (c *Flag) SetStdin(stdin bool) {
 	c.isSTDin = stdin
 }
 
+func (c *Flag) IsGzipResponse() bool {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.isGzipResponse
+}
+
+func (c *Flag) SetGzipResponse(gzipr bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.isGzipResponse = gzipr
+}
+
 func (c *Flag) GetTLS() TLS {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
