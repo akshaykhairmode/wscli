@@ -1,6 +1,8 @@
 package config
 
-import "time"
+import (
+	"time"
+)
 
 func (c *Flag) GetConnectURL() string {
 	c.mux.RLock()
@@ -282,4 +284,16 @@ func (t *TLS) GetCert() string {
 
 func (t *TLS) SetCert(cert string) {
 	t.Cert = cert
+}
+
+func (c *Flag) ShouldProcessAsCmd() bool {
+	if len(Flags.GetExecute()) > 0 && Flags.GetWait() > 0 {
+		return true
+	}
+
+	if Flags.IsStdin() {
+		return true
+	}
+
+	return false
 }

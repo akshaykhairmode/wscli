@@ -3,17 +3,12 @@ package main
 import (
 	"log"
 	"os"
-	"os/signal"
-	"path/filepath"
-	"runtime"
-	"syscall"
 
-	"github.com/akshaykhairmode/wscli/pkg/batch"
 	"github.com/akshaykhairmode/wscli/pkg/config"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
+	"github.com/akshaykhairmode/wscli/pkg/processer"
+	"github.com/akshaykhairmode/wscli/pkg/terminal"
 	"github.com/akshaykhairmode/wscli/pkg/ws"
-	"github.com/chzyer/readline"
-	"github.com/gorilla/websocket"
 )
 
 var CLIVersion string
@@ -32,23 +27,6 @@ func main() {
 		return
 	}
 
-	readlineConfig := &readline.Config{
-		Prompt:          batch.GetPrompt("» "),
-		AutoComplete:    completer,
-		HistoryFile:     getHistoryFilePath("wscli"),
-		InterruptPrompt: "^C",
-		EOFPrompt:       "exit",
-
-		HistorySearchFold: true,
-	}
-
-	rl, err := readline.NewEx(readlineConfig)
-	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while creating readline object")
-	}
-
-	defer rl.Close()
-
 	conn, closeFunc, err := ws.Connect()
 	if err != nil {
 		logger.GlobalLogger.Fatal().Err(err).Msg("connect err")
@@ -56,77 +34,23 @@ func main() {
 
 	defer closeFunc()
 
-	if !config.Flags.IsStdin() {
-		rl.CaptureExitSignal()
-	} else {
-		go catchSignals(conn)
+	if config.Flags.ShouldProcessAsCmd() {
+		processer.ProcessAsCmd(conn)
+		return
 	}
 
-	batch.Process(conn, rl)
-}
-
-func catchSignals(conn *websocket.Conn) {
-	sigs := make(chan os.Signal, 2)
-
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-	logger.GlobalLogger.Debug().Msgf("received signal %s", <-sigs)
-
-	if err := conn.Close(); err != nil {
-		logger.GlobalLogger.Debug().Err(err).Msg("error while closing connection")
-	}
-}
-
-var completer = readline.NewPrefixCompleter(
-	readline.PcItem("/connect"),
-	readline.PcItem("/exit"),
-	readline.PcItem("/ping"),
-	readline.PcItem("/pong"),
-	readline.PcItem("/wait"),
-	readline.PcItem("/help"),
-	readline.PcItem("/flags"),
-	readline.PcItem("/print"),
-)
-
-// func usage(w io.Writer) {
-// 	io.WriteString(w, "commands:\n")
-// 	io.WriteString(w, completer.Tree("    "))
-// }
-
-func getHistoryFilePath(appName string) string {
-
-	fallback := ".readline.history"
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		logger.GlobalLogger.Debug().Err(err).Msg("error while getting homedir")
-		return fallback
-	}
-
-	var historyPath string
-	switch runtime.GOOS {
-	case "linux", "darwin":
-		configDir := filepath.Join(homeDir, ".config", appName)
-		err := os.MkdirAll(configDir, 0700)
-		if err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while creating directory in linux,darwin os")
-			return fallback
+	term, closef, wg := terminal.New()
+	defer func() {
+		if err := closef(); err != nil {
+			logger.GlobalLogger.Debug().Err(err).Msg("error while closing readline")
 		}
-		historyPath = filepath.Join(configDir, "history")
-	case "windows":
-		appData := os.Getenv("AppData")
-		configDir := filepath.Join(appData, appName)
-		err := os.MkdirAll(configDir, 0700)
-		if err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while creating directory in windows os")
-			return fallback
-		}
-		historyPath = filepath.Join(configDir, "history")
-	default:
-		historyPath = filepath.Join(homeDir, "."+appName+"_history")
-	}
+	}()
 
-	logger.GlobalLogger.Debug().Msgf("History Path is %s", historyPath)
+	processor := processer.New(conn, term)
 
-	return historyPath
+	processor.Process()
+
+	//wait for terminal inputs
+	wg.Wait()
+
 }

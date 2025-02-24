@@ -21,12 +21,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
-	"github.com/chzyer/readline"
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
@@ -94,12 +92,16 @@ func Connect() (*websocket.Conn, func(), error) {
 
 	go pingWorker(c)
 
+	go readMessages(c)
+
 	return c, closeFunc, nil
 }
 
 func pingWorker(c *websocket.Conn) {
 	for range time.Tick(5 * time.Second) {
-		c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
+		if err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second)); err != nil {
+			logger.GlobalLogger.Debug().Err(err).Msg("error while pinging")
+		}
 	}
 }
 
@@ -110,9 +112,7 @@ func basicAuth(auth string) string {
 var BlueColor = color.New(color.FgBlue).SprintfFunc()
 var GreenColor = color.New(color.FgGreen).SprintfFunc()
 
-func ReadMessages(conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance) {
-
-	defer wg.Done()
+func readMessages(conn *websocket.Conn) {
 
 	fn := func(what string) func(appData string) error {
 		return func(appData string) error {
@@ -134,7 +134,6 @@ func ReadMessages(conn *websocket.Conn, wg *sync.WaitGroup, l *readline.Instance
 			}
 
 			logger.GlobalLogger.Err(err).Msg("read error")
-			l.Close()
 			return
 		}
 

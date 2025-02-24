@@ -67,7 +67,6 @@ func Get() *Flag {
 	pflag.BoolVarP(&cfg.verbose, "verbose", "v", false, "prints the debug logs")
 	pflag.BoolVar(&cfg.noColor, "no-color", false, "pass true if you want to disable color output")
 	pflag.BoolVarP(&cfg.shouldShowResponseHeaders, "response", "r", false, "pass true if you want to see the http response headers from the server")
-	pflag.BoolVarP(&cfg.isSTDin, "stdin", "i", false, "pass true if you want to read from stdin")
 	pflag.BoolVar(&cfg.isJSONPrettyPrint, "jspp", false, "pass true if you want to parse the response into json and pretty print")
 	pflag.BoolVarP(&cfg.isBinary, "binary", "b", false, "pass if you are sending binary data.")
 	pflag.BoolVar(&cfg.isGzipResponse, "gzipr", false, "pass if you are receiving gzip data and need it decoded and printed")
@@ -99,7 +98,17 @@ func Get() *Flag {
 		color.NoColor = true
 	}
 
+	cfg.isSTDin = isInputFromPipe()
+
 	return &cfg
+}
+
+func isInputFromPipe() bool {
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return (fileInfo.Mode() & os.ModeCharDevice) == 0
 }
 
 func (c *Flag) String() string {

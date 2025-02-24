@@ -28,7 +28,7 @@ wscli -c ws://localhost:8080/ws
 ## ✨ Features
 
 - **🔹 Native Binaries:** Distributable and easy to install across systems.
-- **📤 Piped Input:** Send piped input using the `--stdin` flag. _(Note: Interactive terminal features are disabled when using this mode.)_
+- **📤 Piped Input:** Send piped input by using pipe `|`. _(Note: Interactive terminal features are disabled when using this mode.)_
 - **📨 Multiple Messages on Connect:** Send multiple messages immediately after connecting.
 - **🎭 Background Execution:**
   - Run `wscli` in the background using `nohup`:
@@ -65,7 +65,6 @@ wscli -c ws://localhost:8080/ws
 | `--response`   | `-r`     | Display HTTP response headers from the server. |
 | `--show-ping-pong` | `-P` | Show ping/pong messages. |
 | `--slash`      |          | Enable slash commands _(Experimental)_. |
-| `--stdin`      | `-i`     | Read input from stdin. |
 | `--sub-protocol` | `-s`   | Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times). |
 | `--verbose`    | `-v`     | Enable debug logging. |
 | `--version`    | `-V`     | Display version information. |
