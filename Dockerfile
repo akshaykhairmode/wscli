@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -13,7 +13,8 @@ RUN go mod download
 COPY . .
 
 # Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/wscli main.go
+ARG GIT_TAG
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.CLIVersion=${GIT_TAG}" -o /app/wscli main.go
 
 # --- Final Stage ---
 FROM alpine:latest
