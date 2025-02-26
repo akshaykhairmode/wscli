@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
+	"github.com/akshaykhairmode/wscli/pkg/global"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
 	"github.com/akshaykhairmode/wscli/pkg/processer"
 	"github.com/akshaykhairmode/wscli/pkg/terminal"
@@ -23,13 +25,13 @@ func main() {
 	logger.Init()
 
 	if config.Flags.IsShowVersion() {
-		logger.GlobalLogger.Info().Msgf("CLI Version : %s", CLIVersion)
+		logger.Info().Msgf("CLI Version : %s", CLIVersion)
 		return
 	}
 
 	conn, closeFunc, err := ws.Connect()
 	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("connect err")
+		logger.Fatal().Err(err).Msg("connect err")
 	}
 
 	defer closeFunc()
@@ -42,15 +44,18 @@ func main() {
 	term, closef, wg := terminal.New()
 	defer func() {
 		if err := closef(); err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while closing readline")
+			logger.Debug().Err(err).Msg("error while closing readline")
 		}
 	}()
 
-	processor := processer.New(conn, term)
+	go func() {
+		global.WaitForStop()
+		term.Close()
+	}()
 
-	processor.Process()
+	processer.New(conn, term).Process()
 
-	//wait for terminal inputs
-	wg.Wait()
+	term.Reader(wg)
 
+	fmt.Println()
 }

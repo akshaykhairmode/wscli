@@ -59,8 +59,6 @@ func (i *Interactive) Process() {
 
 	i.term.OnMessage(func(line string) {
 		switch {
-		case line == "/exit" || line == "exit":
-			return
 		case shouldProcessCommand(config.Flags.IsSlash(), line, "/flags"):
 			log.Println(config.Flags.String())
 		case shouldProcessCommand(config.Flags.IsSlash(), line, "/ping"):
@@ -110,7 +108,7 @@ func closeHandler(line string, conn *websocket.Conn) {
 		reason := strings.TrimSpace(strings.Join(spl[1:], " "))
 
 		if err := conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeCode, reason), time.Now().Add(3*time.Second)); err != nil {
-			logger.GlobalLogger.Err(err).Msg("write close error")
+			logger.Err(err).Msg("write close error")
 		}
 	}
 }
@@ -129,18 +127,16 @@ func catchSignals(conn *websocket.Conn, term *terminal.Term) {
 
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	logger.GlobalLogger.Debug().Msgf("received signal %s", <-sigs)
+	logger.Debug().Msgf("received signal %s", <-sigs)
 
 	if conn != nil {
 		if err := conn.Close(); err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while closing connection")
+			logger.Debug().Err(err).Msg("error while closing connection")
 		}
 	}
 
 	if term != nil {
-		if err := term.Close(); err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while closing terminal")
-		}
+		term.Close()
 	}
 
 	time.Sleep(300 * time.Millisecond)

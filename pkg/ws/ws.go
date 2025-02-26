@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
+	"github.com/akshaykhairmode/wscli/pkg/global"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
@@ -86,7 +87,7 @@ func Connect() (*websocket.Conn, func(), error) {
 
 	closeFunc = func() {
 		if err := c.Close(); err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while closing the connection")
+			logger.Debug().Err(err).Msg("error while closing the connection")
 		}
 	}
 
@@ -99,8 +100,12 @@ func Connect() (*websocket.Conn, func(), error) {
 
 func pingWorker(c *websocket.Conn) {
 	for range time.Tick(5 * time.Second) {
-		if err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second)); err != nil {
-			logger.GlobalLogger.Debug().Err(err).Msg("error while pinging")
+		err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
+		if err != nil {
+			if err.Error() == "websocket: close sent" {
+				return
+			}
+			logger.Debug().Err(err).Msg("error while pinging")
 		}
 	}
 }
@@ -123,6 +128,11 @@ func readMessages(conn *websocket.Conn) {
 		}
 	}
 
+	defer func() {
+		logger.Debug().Msg("enabling global stop application flag")
+		global.Stop()
+	}()
+
 	conn.SetPingHandler(fn("ping"))
 	conn.SetPongHandler(fn("pong"))
 
@@ -133,7 +143,7 @@ func readMessages(conn *websocket.Conn) {
 				return
 			}
 
-			logger.GlobalLogger.Err(err).Msg("read error")
+			log.Println(err.Error())
 			return
 		}
 
@@ -144,7 +154,7 @@ func readMessages(conn *websocket.Conn) {
 			if config.Flags.IsGzipResponse() {
 				gzBytes, err := unzipGzipBytes(message)
 				if err != nil {
-					logger.GlobalLogger.Err(err).Msg("error while unzipping bytes")
+					logger.Err(err).Msg("error while unzipping bytes")
 				} else {
 					log.Println(gzBytes)
 				}
@@ -184,13 +194,13 @@ func formatMessage(message []byte) string {
 
 	m := map[string]any{}
 	if err := json.Unmarshal(message, &m); err != nil {
-		logger.GlobalLogger.Debug().Err(err).Msg("UNMARSHAL ERR")
+		logger.Debug().Err(err).Msg("UNMARSHAL ERR")
 		return GreenColor("« %s", message)
 	}
 
 	jenc, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
-		logger.GlobalLogger.Debug().Err(err).Msg("MARSHALINDENT ERR")
+		logger.Debug().Err(err).Msg("MARSHALINDENT ERR")
 		return GreenColor("« %s", message)
 	}
 
@@ -200,24 +210,24 @@ func formatMessage(message []byte) string {
 func WriteToServer(conn *websocket.Conn, message string) {
 
 	if conn == nil {
-		logger.GlobalLogger.Error().Msg("Connection is nil")
+		logger.Error().Msg("Connection is nil")
 		return
 	}
 
 	if !config.Flags.IsBinary() {
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
-			logger.GlobalLogger.Err(err).Msg("write error")
+			logger.Err(err).Msg("write error")
 		}
 		return
 	}
 
 	dec, err := hex.DecodeString(message)
 	if err != nil {
-		logger.GlobalLogger.Err(err).Msg("error while doing decode string")
+		logger.Err(err).Msg("error while doing decode string")
 		return
 	}
 	if err := conn.WriteMessage(websocket.BinaryMessage, dec); err != nil {
-		logger.GlobalLogger.Err(err).Msg("write error")
+		logger.Err(err).Msg("write error")
 	}
 
 }
@@ -236,7 +246,7 @@ func getTLSConfig() *tls.Config {
 
 	certificates, err := processCert(tlsCfg.Cert, tlsCfg.Key, tlsCfg.Passphrase)
 	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while processing client certificate")
+		logger.Fatal().Err(err).Msg("error while processing client certificate")
 		return nil
 	}
 
@@ -288,14 +298,14 @@ func processCACert(caCertPath string) *x509.CertPool {
 
 	caCert, err := os.ReadFile(caCertPath)
 	if err != nil {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while reading CA certificate")
+		logger.Fatal().Err(err).Msg("error while reading CA certificate")
 		return nil
 	}
 	caCertPool := x509.NewCertPool()
 
 	ok := caCertPool.AppendCertsFromPEM(caCert)
 	if !ok {
-		logger.GlobalLogger.Fatal().Err(err).Msg("error while parsing CA certificate")
+		logger.Fatal().Err(err).Msg("error while parsing CA certificate")
 		return nil
 	}
 
