@@ -48,7 +48,8 @@ wscli -c ws://localhost:8080/ws
 
 | Flag             | Shorthand | Description |
 |-----------------|----------|-------------|
-| `--auth`        |          | HTTP Basic Authentication credentials (e.g., `username:password`). |
+| `--auth`       |          | HTTP Basic Authentication credentials (e.g., `username:password`). |
+| `--binary`     | `-b`     | Send hex encoded data to server |
 | `--ca`         |          | Path to the CA certificate file (optional). |
 | `--cert`       |          | Path to the client certificate file (optional). |
 | `--connect`    | `-c`     | WebSocket connection URL. |
