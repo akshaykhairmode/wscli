@@ -14,7 +14,7 @@ COPY . .
 
 # Build the Go application
 ARG GIT_TAG
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.CLIVersion=${GIT_TAG}" -o /app/wscli main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.CLIVersion=${GIT_TAG} -w -s" -o /app/wscli main.go
 
 # --- Final Stage ---
 FROM alpine:latest
