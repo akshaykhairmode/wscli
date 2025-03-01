@@ -36,10 +36,10 @@ func newUpgrader() *websocket.Upgrader {
 		// echo
 		fmt.Println("OnOpen:", c.RemoteAddr().String())
 
-		go func() {
-			time.Sleep(5 * time.Second)
-			c.WriteClose(3008, "closing after 10s")
-		}()
+		// go func() {
+		// 	time.Sleep(5 * time.Second)
+		// 	c.WriteClose(3008, "closing after 10s")
+		// }()
 
 	})
 	u.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {

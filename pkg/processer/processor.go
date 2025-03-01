@@ -3,6 +3,7 @@ package processer
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -33,7 +34,7 @@ func New(conn *websocket.Conn, term *terminal.Term) *Interactive {
 
 func ProcessAsCmd(conn *websocket.Conn) {
 	for _, cmd := range config.Flags.GetExecute() {
-		ws.WriteToServer(conn, cmd)
+		ws.WriteToServer(conn, websocket.TextMessage, []byte(cmd))
 	}
 
 	defer func() {
@@ -44,7 +45,7 @@ func ProcessAsCmd(conn *websocket.Conn) {
 		go catchSignals(conn, nil)
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			ws.WriteToServer(conn, scanner.Text())
+			ws.WriteToServer(conn, websocket.TextMessage, scanner.Bytes())
 		}
 	}
 }
@@ -52,30 +53,67 @@ func ProcessAsCmd(conn *websocket.Conn) {
 func (i *Interactive) Process() {
 
 	for _, cmd := range config.Flags.GetExecute() {
-		ws.WriteToServer(i.conn, cmd)
+		ws.WriteToServer(i.conn, websocket.TextMessage, []byte(cmd))
 	}
 
 	i.term.AppendPrompt(fmt.Sprintf("(%s)»", truncateString(config.Flags.GetConnectURL(), 25)))
 
 	i.term.OnMessage(func(line string) {
 		switch {
-		case shouldProcessCommand(config.Flags.IsSlash(), line, "/flags"):
+		case shouldProcessCommand(line, "/flags"):
 			log.Println(config.Flags.String())
-		case shouldProcessCommand(config.Flags.IsSlash(), line, "/ping"):
+		case shouldProcessCommand(line, "/ping"):
 			getPingPongHandler(i.conn, line, websocket.PingMessage)()
-		case shouldProcessCommand(config.Flags.IsSlash(), line, "/pong"):
+		case shouldProcessCommand(line, "/pong"):
 			getPingPongHandler(i.conn, line, websocket.PongMessage)()
-		case shouldProcessCommand(config.Flags.IsSlash(), line, "/close"):
-			closeHandler(line, i.conn)
+		case shouldProcessCommand(line, "/close"):
+			closeHandler(i.conn, line)
+		case shouldProcessCommand(line, "/bfile"):
+			sendBinaryFile(i.conn, line)
 		default:
-			ws.WriteToServer(i.conn, line)
+			ws.WriteToServer(i.conn, websocket.TextMessage, []byte(line))
 		}
 	})
 
 }
 
-func shouldProcessCommand(isSlash bool, line, prefix string) bool {
-	if isSlash && strings.HasPrefix(line, prefix) {
+func sendBinaryFile(conn *websocket.Conn, line string) {
+	filePath := strings.TrimSpace(line[6:])
+	if filePath == "" {
+		log.Println("filepath is empty")
+		return
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("file open err : %s", err)
+		return
+	}
+
+	fi, err := f.Stat()
+	if err != nil {
+		log.Printf("file stat err : %s", err)
+		return
+	}
+
+	if fi.Size() > 50*1024*1024 {
+		log.Println("file size is greater than 50mb")
+		return
+	}
+
+	fileData, err := io.ReadAll(f)
+	if err != nil {
+		log.Printf("readall error : %s", err)
+		return
+	}
+
+	ws.WriteToServer(conn, websocket.BinaryMessage, fileData)
+	log.Println("file sent successfully")
+
+}
+
+func shouldProcessCommand(line, prefix string) bool {
+	if config.Flags.IsSlash() && strings.HasPrefix(line, prefix) {
 		return true
 	}
 
@@ -90,7 +128,7 @@ func truncateString(s string, n int) string {
 	return s
 }
 
-func closeHandler(line string, conn *websocket.Conn) {
+func closeHandler(conn *websocket.Conn, line string) {
 	str := strings.TrimSpace(line[6:])
 	if len(str) > 0 {
 		spl := strings.Split(str, " ")

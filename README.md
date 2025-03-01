@@ -7,7 +7,7 @@ A lightweight and powerful Go command-line tool for interacting with WebSocket s
 ### Using `Docker`
 
 ```sh
-docker run -it akshaykhairmode/wscli:latest -c "ws://example.com/ws"
+$ docker run -it akshaykhairmode/wscli:latest -c "ws://example.com/ws"
 ```
 
 ### Using `go install`
@@ -20,9 +20,31 @@ If you don’t have Go installed, download the latest binaries from the [Release
 
 ## 🔧 Usage
 
-To quickly connect to a WebSocket server:
+#### Connect to a local WebSocket server
 ```sh
-wscli -c ws://localhost:8080/ws
+$ wscli -c ws://localhost:8080/ws
+```
+
+#### Connect with custom headers
+```sh
+$ wscli -c ws://ws://localhost:8080/ws -H "Authorization: Bearer mytoken" -H "X-Custom: value"
+```
+
+#### Send a command directly after connecting
+```sh
+$ wscli -c ws://ws://localhost:8080/ws -x '{"action": "subscribe", "channel": "updates"}'
+```
+
+#### send a close message with code 1000 and reason "normal closure"
+```sh
+$ wscli --slash -c ws://localhost:8080/ws
+/close 1000 normal closure
+```
+
+#### send a file
+```sh
+$ wscli --slash -c ws://localhost:8080/ws
+/bfile /home/user/test.bin
 ```
 
 ## ✨ Features
@@ -33,16 +55,17 @@ wscli -c ws://localhost:8080/ws
 - **🎭 Background Execution:**
   - Run `wscli` in the background using `nohup`:
     ```sh
-    nohup wscli -c ws://localhost/ws -w 1s > nohup.out 2>&1 &
+    $ nohup wscli -c ws://localhost/ws -w 1s > nohup.out 2>&1 &
     ```
   - Redirect output and run in the background:
     ```sh
-    wscli -c ws://localhost/ws >> output.txt & 2>&1
+    $ wscli -c ws://localhost/ws >> output.txt & 2>&1
     ```
 - **📜 History Persistence:** Maintain a command history for quick reuse.
 - **⚡ Command Execution on Connect:** Use `-x` to execute commands automatically after connection.
 - **📌 JSON Pretty Printing:** Format JSON responses with the `--jspp` flag.
 - **⌨️ Terminal Shortcuts:** Supports readline shortcuts like `Ctrl+W` (delete word) and `Ctrl+R` (reverse search). [See full list](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
+- **🗂️ Binary File Transfer**: Send a file as binary message to the server.
 
 ## 🛠 Available Flags
 
@@ -65,14 +88,23 @@ wscli -c ws://localhost:8080/ws
 | `--proxy`      |          | Use a proxy URL. |
 | `--response`   | `-r`     | Display HTTP response headers from the server. |
 | `--show-ping-pong` | `-P` | Show ping/pong messages. |
-| `--slash`      |          | Enable slash commands _(Experimental)_. |
+| `--slash`      |          | Enable slash commands. |
 | `--sub-protocol` | `-s`   | Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times). |
 | `--verbose`    | `-v`     | Enable debug logging. |
 | `--version`    | `-V`     | Display version information. |
 | `--wait`       | `-w`     | Wait time after command execution (`1s`, `1m`, `1h`). |
 
+## 🛠 Slash Commands (enable via `--slash` flag)
+
+| Command | Description |
+|---------|-------------|
+| `/flags` | Prints all the flags which are loaded |
+| `/ping` | Sends a ping message to server |
+| `/pong` | Sends a pong message to server |
+| `/close` | Sends a close message to server. Format `/close <close_code> <reason`> |
+| `/bfile` | Sends a file to server. Format `/bfile <file_path`>. The path should be absolute. File Size Limit - 50MB |
+
 ## 🚧 Upcoming Features (TODO)
 
-- **Enhanced Slash Commands:** Ability to read binary files and send them to the server.
 - **Basic Load Generation:** Support for load testing via interactive mode.
 - **WebSocket Listener:** Implement a feature to start a WebSocket server.

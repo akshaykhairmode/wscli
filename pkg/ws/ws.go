@@ -207,7 +207,7 @@ func formatMessage(message []byte) string {
 	return GreenColor("%s", jenc)
 }
 
-func WriteToServer(conn *websocket.Conn, message string) {
+func WriteToServer(conn *websocket.Conn, mt int, message []byte) {
 
 	if conn == nil {
 		logger.Error().Msg("Connection is nil")
@@ -215,13 +215,13 @@ func WriteToServer(conn *websocket.Conn, message string) {
 	}
 
 	if !config.Flags.IsBinary() {
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+		if err := conn.WriteMessage(mt, message); err != nil {
 			logger.Err(err).Msg("write error")
 		}
 		return
 	}
 
-	dec, err := hex.DecodeString(message)
+	dec, err := hex.DecodeString(string(message))
 	if err != nil {
 		logger.Err(err).Msg("error while doing decode string")
 		return
