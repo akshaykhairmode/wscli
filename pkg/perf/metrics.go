@@ -45,6 +45,17 @@ func MSToNS(milliseconds int64) time.Duration {
 }
 
 func (m *Metrics) printMetrics() {
+
+	heading := []any{
+		"TotConns",
+		"ActConns",
+		"TotSent",
+		"TotRecvd",
+		"TotFailed",
+		"AvgConnTime",
+		"AvgMsgTime",
+	}
+
 	fmt.Println()
 	for range time.Tick(time.Second) {
 		total := m.totalConns
@@ -64,7 +75,7 @@ func (m *Metrics) printMetrics() {
 		}
 
 		m.print([][]any{
-			{"TotConns", "ActConns", "TotSent", "TotRecvd", "TotFailed", "AvgConnTime", "AvgMsgTime"},
+			heading,
 			{total, active, sent, received, failed, avgConnectTime.Round(time.Millisecond), avgMessageTime.Round(time.Millisecond)},
 		})
 	}

@@ -30,24 +30,29 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Connect() (*websocket.Conn, func(), error) {
+type CloseFunc func()
+
+type ReaderFunc func(*websocket.Conn)
+
+func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 
 	closeFunc := func() {}
+	rFunc := ReaderFunc(func(*websocket.Conn) {})
 
 	if config.Flags.GetConnectURL() == "" {
-		return nil, closeFunc, fmt.Errorf("connect url is empty")
+		return nil, closeFunc, rFunc, fmt.Errorf("connect url is empty")
 	}
 
 	u, err := url.Parse(config.Flags.GetConnectURL())
 	if err != nil {
-		return nil, closeFunc, fmt.Errorf("error while passing the url : %w", err)
+		return nil, closeFunc, rFunc, fmt.Errorf("error while passing the url : %w", err)
 	}
 
 	headers := http.Header{}
 	for _, h := range config.Flags.GetHeaders() {
 		headSpl := strings.Split(h, ":")
 		if len(headSpl) != 2 {
-			return nil, closeFunc, fmt.Errorf("invalid header : %s", h)
+			return nil, closeFunc, rFunc, fmt.Errorf("invalid header : %s", h)
 		}
 		headers.Set(headSpl[0], headSpl[1])
 	}
@@ -68,14 +73,14 @@ func Connect() (*websocket.Conn, func(), error) {
 	if config.Flags.GetProxy() != "" {
 		proxyURLParsed, err := url.Parse(config.Flags.GetProxy())
 		if err != nil {
-			return nil, closeFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
+			return nil, closeFunc, rFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
 		}
 		dialer.Proxy = http.ProxyURL(proxyURLParsed)
 	}
 
 	c, resp, err := dialer.Dial(u.String(), headers)
 	if err != nil {
-		return nil, closeFunc, fmt.Errorf("dial error : %w", err)
+		return nil, closeFunc, rFunc, fmt.Errorf("dial error : %w", err)
 	}
 
 	if config.Flags.ShowResponseHeaders() {
@@ -92,9 +97,7 @@ func Connect() (*websocket.Conn, func(), error) {
 
 	go PingWorker(c)
 
-	go readMessages(c)
-
-	return c, closeFunc, nil
+	return c, closeFunc, readMessages, nil
 }
 
 func PingWorker(c *websocket.Conn) {

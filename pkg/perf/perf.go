@@ -3,11 +3,7 @@ package perf
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"math/rand"
-	"net/http"
-	"net/url"
-	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -96,7 +92,7 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 
 	//connect
 	now := time.Now()
-	conn, closef, err := connect()
+	conn, closef, _, err := ws.Connect()
 	if err != nil {
 		logger.Error().Err(err).Msg("error while connecting")
 		return
@@ -159,26 +155,33 @@ var funcMap = template.FuncMap{
 
 const alphaNumericChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+var (
+	alphaNumericBytes = []byte(alphaNumericChars)
+	alphaNumericLen   = len(alphaNumericBytes)
+	randomSource      = rand.NewSource(time.Now().UnixNano())
+	randomGenerator   = rand.New(randomSource)
+)
+
 func randomAlphaNumeric(length ...int) string {
-	if len(length) == 0 {
-		return randomAlphaNumeric(10)
+	l := 10
+	if len(length) > 0 {
+		l = length[0]
 	}
 
-	b := make([]byte, length[0])
+	b := make([]byte, l)
 	for i := range b {
-		b[i] = alphaNumericChars[rand.Intn(len(alphaNumericChars))]
+		b[i] = alphaNumericBytes[randomGenerator.Intn(alphaNumericLen)]
 	}
 
 	return string(b)
-
 }
 
 func randomInt(max ...int) int {
 	if len(max) == 0 {
-		return rand.Intn(10000)
+		return randomGenerator.Intn(10000)
 	}
 
-	return rand.Intn(max[0])
+	return randomGenerator.Intn(max[0])
 }
 
 func randomUUID() string {
@@ -198,68 +201,4 @@ func parseTemplate(tmpl *template.Template, str string) error {
 
 	return nil
 
-}
-
-func connect() (*websocket.Conn, func(), error) {
-	closeFunc := func() {}
-
-	if config.Flags.GetConnectURL() == "" {
-		return nil, closeFunc, fmt.Errorf("connect url is empty")
-	}
-
-	u, err := url.Parse(config.Flags.GetConnectURL())
-	if err != nil {
-		return nil, closeFunc, fmt.Errorf("error while passing the url : %w", err)
-	}
-
-	headers := http.Header{}
-	for _, h := range config.Flags.GetHeaders() {
-		headSpl := strings.Split(h, ":")
-		if len(headSpl) != 2 {
-			return nil, closeFunc, fmt.Errorf("invalid header : %s", h)
-		}
-		headers.Set(headSpl[0], headSpl[1])
-	}
-
-	if config.Flags.GetOrigin() != "" {
-		headers.Set("Origin", config.Flags.GetOrigin())
-	}
-
-	if config.Flags.GetAuth() != "" {
-		headers.Set("Authorization", ws.BasicAuth(config.Flags.GetAuth()))
-	}
-
-	dialer := websocket.Dialer{
-		Subprotocols:    config.Flags.GetSubProtocol(),
-		TLSClientConfig: ws.GetTLSConfig(),
-	}
-
-	if config.Flags.GetProxy() != "" {
-		proxyURLParsed, err := url.Parse(config.Flags.GetProxy())
-		if err != nil {
-			return nil, closeFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
-		}
-		dialer.Proxy = http.ProxyURL(proxyURLParsed)
-	}
-
-	c, resp, err := dialer.Dial(u.String(), headers)
-	if err != nil {
-		return nil, closeFunc, fmt.Errorf("dial error : %w", err)
-	}
-
-	if config.Flags.ShowResponseHeaders() {
-		for k, v := range resp.Header {
-			log.Println(k, v)
-		}
-	}
-
-	closeFunc = func() {
-		if err := c.Close(); err != nil {
-			logger.Debug().Err(err).Msg("error while closing the connection")
-		}
-	}
-
-	go ws.PingWorker(c)
-
-	return c, closeFunc, nil
 }

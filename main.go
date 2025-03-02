@@ -39,12 +39,14 @@ func main() {
 		return
 	}
 
-	conn, closeFunc, err := ws.Connect()
+	conn, closeFunc, readFunc, err := ws.Connect()
 	if err != nil {
 		logger.Fatal().Err(err).Msg("connect err")
 	}
 
 	defer closeFunc()
+
+	go readFunc(conn)
 
 	if config.Flags.ShouldProcessAsCmd() {
 		processer.ProcessAsCmd(conn)
