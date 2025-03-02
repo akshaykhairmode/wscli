@@ -135,8 +135,6 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNum
 # --mps 10 (send 10 messages per second)
 ```
 
-![perf output](image.png)
-
 ## 🚧 Upcoming Features
 
 - **WebSocket Listener:** Implement a feature to start a WebSocket server.
