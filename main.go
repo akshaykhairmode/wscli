@@ -8,6 +8,7 @@ import (
 	"github.com/akshaykhairmode/wscli/pkg/config"
 	"github.com/akshaykhairmode/wscli/pkg/global"
 	"github.com/akshaykhairmode/wscli/pkg/logger"
+	"github.com/akshaykhairmode/wscli/pkg/perf"
 	"github.com/akshaykhairmode/wscli/pkg/processer"
 	"github.com/akshaykhairmode/wscli/pkg/terminal"
 	"github.com/akshaykhairmode/wscli/pkg/ws"
@@ -26,6 +27,15 @@ func main() {
 
 	if config.Flags.IsShowVersion() {
 		logger.Info().Msgf("CLI Version : %s", CLIVersion)
+		return
+	}
+
+	if config.Flags.IsPerf() {
+		gen, err := perf.New(config.Flags.GetPerfConfig())
+		if err != nil {
+			logger.Fatal().Err(err).Msg("error while creating perf instance")
+		}
+		gen.Run()
 		return
 	}
 

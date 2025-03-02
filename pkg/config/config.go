@@ -21,6 +21,8 @@ type Flag struct {
 	subProtocol []string
 	proxy       string
 
+	perf Perf
+
 	showPingPong              bool
 	isSlash                   bool
 	noCertificateCheck        bool
@@ -31,10 +33,10 @@ type Flag struct {
 	isJSONPrettyPrint         bool
 	isBinary                  bool
 	isGzipResponse            bool
+	isPerf                    bool
 
-	help          bool
-	isInteractive bool
-	isSTDin       bool // read from stdin, cannot send messages to the server other than what is in the stdin
+	help    bool
+	isSTDin bool // read from stdin, cannot send messages to the server other than what is in the stdin
 
 	tls TLS
 
@@ -46,6 +48,15 @@ type TLS struct {
 	Cert       string
 	Key        string
 	Passphrase string
+}
+
+type Perf struct {
+	TotalConns           int           //total connections which needs to be created.
+	LoadMessage          string        //the load message which needs to be sent to the server.
+	MessagePerSecond     int           //how many messages to be sent per second.
+	AuthMessage          string        //the auth message which needs to be send as soon as connecting.
+	WaitAfterAuth        time.Duration //wait for x number of time before starting to send load.
+	RampUpConnsPerSecond int           //how many connections to add every second
 }
 
 var Flags *Flag
@@ -83,15 +94,21 @@ func Get() *Flag {
 	pflag.StringVar(&cfg.tls.CA, "ca", "", "Path to the CA certificate file (optional).")
 	pflag.StringVar(&cfg.tls.Cert, "cert", "", "Path to the client certificate file (optional).")
 	pflag.StringVar(&cfg.tls.Key, "key", "", "Path to the certificate key file (optional).")
+
+	//perf
+	pflag.BoolVar(&cfg.isPerf, "perf", false, "Enable load testing")
+	pflag.IntVar(&cfg.perf.TotalConns, "tc", 0, "Total number of connections to create")
+	pflag.StringVar(&cfg.perf.LoadMessage, "lm", "", "Load message to send to the server")
+	pflag.IntVar(&cfg.perf.MessagePerSecond, "mps", 1, "Number of messages to send per second")
+	pflag.StringVar(&cfg.perf.AuthMessage, "am", "", "Authentication message to send to the server")
+	pflag.DurationVar(&cfg.perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
+	pflag.IntVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
+
 	pflag.Parse()
 
 	if cfg.help {
 		pflag.Usage()
 		os.Exit(0)
-	}
-
-	if pflag.NFlag() <= 0 {
-		cfg.isInteractive = true
 	}
 
 	if cfg.noColor {
@@ -136,7 +153,6 @@ func (c *Flag) String() string {
 	sb.WriteString(fmt.Sprintf("  isGzipResponse: %t\n", c.isGzipResponse))
 
 	sb.WriteString(fmt.Sprintf("  help: %t\n", c.help))
-	sb.WriteString(fmt.Sprintf("  isInteractive: %t\n", c.isInteractive))
 	sb.WriteString(fmt.Sprintf("  isSTDin: %t\n", c.isSTDin))
 
 	// You may want to customize how TLS is printed

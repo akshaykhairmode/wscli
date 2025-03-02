@@ -4,6 +4,24 @@ import (
 	"time"
 )
 
+func (c *Flag) IsPerf() bool {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.isPerf
+}
+
+func (c *Flag) SetPerf(isPerf bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.isPerf = isPerf
+}
+
+func (c *Flag) GetPerfConfig() Perf {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.perf
+}
+
 func (c *Flag) GetConnectURL() string {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
@@ -218,18 +236,6 @@ func (c *Flag) SetHelp(help bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	c.help = help
-}
-
-func (c *Flag) IsInteractive() bool {
-	c.mux.RLock()
-	defer c.mux.RUnlock()
-	return c.isInteractive
-}
-
-func (c *Flag) SetIsInteractive(isInteractive bool) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	c.isInteractive = isInteractive
 }
 
 func (c *Flag) IsStdin() bool {

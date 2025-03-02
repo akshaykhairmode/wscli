@@ -57,12 +57,12 @@ func Connect() (*websocket.Conn, func(), error) {
 	}
 
 	if config.Flags.GetAuth() != "" {
-		headers.Set("Authorization", basicAuth(config.Flags.GetAuth()))
+		headers.Set("Authorization", BasicAuth(config.Flags.GetAuth()))
 	}
 
 	dialer := websocket.Dialer{
 		Subprotocols:    config.Flags.GetSubProtocol(),
-		TLSClientConfig: getTLSConfig(),
+		TLSClientConfig: GetTLSConfig(),
 	}
 
 	if config.Flags.GetProxy() != "" {
@@ -82,7 +82,6 @@ func Connect() (*websocket.Conn, func(), error) {
 		for k, v := range resp.Header {
 			log.Println(k, v)
 		}
-
 	}
 
 	closeFunc = func() {
@@ -91,14 +90,14 @@ func Connect() (*websocket.Conn, func(), error) {
 		}
 	}
 
-	go pingWorker(c)
+	go PingWorker(c)
 
 	go readMessages(c)
 
 	return c, closeFunc, nil
 }
 
-func pingWorker(c *websocket.Conn) {
+func PingWorker(c *websocket.Conn) {
 	for range time.Tick(5 * time.Second) {
 		err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
 		if err != nil {
@@ -110,7 +109,7 @@ func pingWorker(c *websocket.Conn) {
 	}
 }
 
-func basicAuth(auth string) string {
+func BasicAuth(auth string) string {
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
@@ -232,7 +231,7 @@ func WriteToServer(conn *websocket.Conn, mt int, message []byte) {
 
 }
 
-func getTLSConfig() *tls.Config {
+func GetTLSConfig() *tls.Config {
 
 	if config.Flags.SkipCertificateCheck() {
 		return &tls.Config{

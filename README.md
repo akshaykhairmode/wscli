@@ -4,8 +4,7 @@ A lightweight and powerful Go command-line tool for interacting with WebSocket s
 
 ## 🚀 Installation
 
-### Using `Docker`
-
+### Using Docker
 ```sh
 $ docker run -it akshaykhairmode/wscli:latest -c "ws://example.com/ws"
 ```
@@ -20,28 +19,28 @@ If you don’t have Go installed, download the latest binaries from the [Release
 
 ## 🔧 Usage
 
-#### Connect to a local WebSocket server
+### Connect to a WebSocket server
 ```sh
 $ wscli -c ws://localhost:8080/ws
 ```
 
-#### Connect with custom headers
+### Connect with custom headers
 ```sh
-$ wscli -c ws://ws://localhost:8080/ws -H "Authorization: Bearer mytoken" -H "X-Custom: value"
+$ wscli -c ws://localhost:8080/ws -H "Authorization: Bearer mytoken" -H "X-Custom: value"
 ```
 
-#### Send a command directly after connecting
+### Send a command immediately after connecting
 ```sh
-$ wscli -c ws://ws://localhost:8080/ws -x '{"action": "subscribe", "channel": "updates"}'
+$ wscli -c ws://localhost:8080/ws -x '{"action": "subscribe", "channel": "updates"}'
 ```
 
-#### send a close message with code 1000 and reason "normal closure"
+### Send a close message with code 1000 and reason "normal closure"
 ```sh
 $ wscli --slash -c ws://localhost:8080/ws
 /close 1000 normal closure
 ```
 
-#### send a file
+### Send a binary file
 ```sh
 $ wscli --slash -c ws://localhost:8080/ws
 /bfile /home/user/test.bin
@@ -49,8 +48,8 @@ $ wscli --slash -c ws://localhost:8080/ws
 
 ## ✨ Features
 
-- **🔹 Native Binaries:** Distributable and easy to install across systems.
-- **📤 Piped Input:** Send piped input by using pipe `|`. _(Note: Interactive terminal features are disabled when using this mode.)_
+- **🔹 Native Binaries:** Easy installation across systems.
+- **📤 Piped Input:** Send piped input using `|` (disables interactive terminal features).
 - **📨 Multiple Messages on Connect:** Send multiple messages immediately after connecting.
 - **🎭 Background Execution:**
   - Run `wscli` in the background using `nohup`:
@@ -62,49 +61,82 @@ $ wscli --slash -c ws://localhost:8080/ws
     $ wscli -c ws://localhost/ws >> output.txt & 2>&1
     ```
 - **📜 History Persistence:** Maintain a command history for quick reuse.
-- **⚡ Command Execution on Connect:** Use `-x` to execute commands automatically after connection.
-- **📌 JSON Pretty Printing:** Format JSON responses with the `--jspp` flag.
+- **⚡ Command Execution on Connect:** Use `-x` to execute commands automatically.
+- **📌 JSON Pretty Printing:** Format JSON responses using `--jspp`.
 - **⌨️ Terminal Shortcuts:** Supports readline shortcuts like `Ctrl+W` (delete word) and `Ctrl+R` (reverse search). [See full list](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
-- **🗂️ Binary File Transfer**: Send a file as binary message to the server.
+- **🗂️ Binary File Transfer:** Send a file as a binary message.
 
 ## 🛠 Available Flags
 
-| Flag             | Shorthand | Description |
-|-----------------|----------|-------------|
-| `--auth`       |          | HTTP Basic Authentication credentials (e.g., `username:password`). |
-| `--binary`     | `-b`     | Send hex encoded data to server |
-| `--ca`         |          | Path to the CA certificate file (optional). |
-| `--cert`       |          | Path to the client certificate file (optional). |
-| `--connect`    | `-c`     | WebSocket connection URL. |
-| `--execute`    | `-x`     | Execute a command after connecting (use multiple times for multiple commands). |
-| `--gzipr`      |          | Enable gzip decoding if server messages are gzip-encoded. _(Note: Server must send messages as binary.)_ |
-| `--header`     | `-H`     | Custom headers (`key:value`, can be used multiple times). |
-| `--help`       | `-h`     | Display help information. |
-| `--jspp`       |          | Enable JSON pretty printing for responses. |
-| `--key`        |          | Path to the certificate key file (optional). |
-| `--no-check`   | `-n`     | Disable TLS certificate verification. |
-| `--no-color`   |          | Disable colored output. |
-| `--origin`     | `-o`     | Specify origin for the WebSocket connection (optional). |
-| `--proxy`      |          | Use a proxy URL. |
-| `--response`   | `-r`     | Display HTTP response headers from the server. |
+| Flag | Shorthand | Description |
+|------|----------|-------------|
+| `--auth` | | HTTP Basic Authentication (`username:password`). |
+| `--binary` | `-b` | Send hex-encoded data. |
+| `--ca` | | Path to the CA certificate file (optional). |
+| `--cert` | | Path to the client certificate file (optional). |
+| `--connect` | `-c` | WebSocket connection URL. |
+| `--execute` | `-x` | Execute a command after connecting. |
+| `--gzipr` | | Enable gzip decoding (server must send messages as binary). |
+| `--header` | `-H` | Custom headers (`key:value`). |
+| `--help` | `-h` | Show help information. |
+| `--jspp` | | Enable JSON pretty printing. |
+| `--key` | | Path to the certificate key file (optional). |
+| `--no-check` | `-n` | Disable TLS certificate verification. |
+| `--no-color` | | Disable colored output. |
+| `--origin` | `-o` | Specify origin for the WebSocket connection. |
+| `--proxy` | | Use a proxy URL. |
+| `--response` | `-r` | Show HTTP response headers. |
 | `--show-ping-pong` | `-P` | Show ping/pong messages. |
-| `--slash`      |          | Enable slash commands. |
-| `--sub-protocol` | `-s`   | Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times). |
-| `--verbose`    | `-v`     | Enable debug logging. |
-| `--version`    | `-V`     | Display version information. |
-| `--wait`       | `-w`     | Wait time after command execution (`1s`, `1m`, `1h`). |
+| `--slash` | | Enable slash commands. |
+| `--sub-protocol` | `-s` | Specify a WebSocket sub-protocol. |
+| `--verbose` | `-v` | Enable debug logging. |
+| `--version` | `-V` | Show version information. |
+| `--wait` | `-w` | Wait time after execution (`1s`, `1m`, `1h`). |
+| `--perf` | | Enable performance testing. |
 
-## 🛠 Slash Commands (enable via `--slash` flag)
+## 🛠 Slash Commands (Enable via `--slash`)
 
 | Command | Description |
 |---------|-------------|
-| `/flags` | Prints all the flags which are loaded |
-| `/ping` | Sends a ping message to server |
-| `/pong` | Sends a pong message to server |
-| `/close` | Sends a close message to server. Format `/close <close_code> <reason`> |
-| `/bfile` | Sends a file to server. Format `/bfile <file_path`>. The path should be absolute. File Size Limit - 50MB |
+| `/flags` | Show loaded flags. |
+| `/ping` | Send a ping message. |
+| `/pong` | Send a pong message. |
+| `/close` | Send a close message (`/close <code> <reason>`). |
+| `/bfile` | Send a file (`/bfile <file_path>`). Max size: 50MB. |
 
-## 🚧 Upcoming Features (TODO)
+## 📊 Load Testing (Enable via `--perf`)
 
-- **Basic Load Generation:** Support for load testing via interactive mode.
+| Flag | Description |
+|------|-------------|
+| `--tc` | Total number of connections. |
+| `--lm` | Load message to send. Can use templates defined below. |
+| `--mps` | Messages per second (default: 1). |
+| `--am` | Authentication message. Can use templates defined below. |
+| `--waa` | Wait time after authentication before sending load messages. |
+| `--rups` | Connections ramp-up per second (default: 1). |
+
+### Load Message Templates
+
+| Function | Description |
+|----------|-------------|
+| `RandomNumber <max>` | Generates a random number (default: 0–10,000). |
+| `RandomUUID` | Generates a random UUID. |
+| `RandomAlphaNumeric <length>` | Generates a random alphanumeric string (default length: 10). |
+
+#### Example
+```sh
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNumber 50}}" --rups 100 --mps 10
+
+# Flags used:
+# --perf (enable performance testing)
+# --tc 1000 (create 1000 connections)
+# --lm "hello world {{RandomNumber 50}}" (load message, generate a random number from 0 to 50)
+# --rups 100 (ramp up 100 connections per second)
+# --mps 10 (send 10 messages per second)
+```
+
+![perf output](image.png)
+
+## 🚧 Upcoming Features
+
 - **WebSocket Listener:** Implement a feature to start a WebSocket server.
