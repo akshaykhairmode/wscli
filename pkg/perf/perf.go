@@ -3,8 +3,12 @@ package perf
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -44,6 +48,14 @@ func New(config config.Perf) (*Generator, error) {
 }
 
 func (g *Generator) Run() {
+
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+		<-sigs
+		log.Printf("\n\n")
+		os.Exit(0)
+	}()
 
 	wg := &sync.WaitGroup{}
 
@@ -141,7 +153,7 @@ func (g *Generator) executeTemplate(data string) []byte {
 	buf := bytes.NewBuffer(nil)
 	err := g.templ.Execute(buf, data)
 	if err != nil {
-		logger.Error().Err(err).Msg("error while executing the template")
+		logger.Error().Err(err).Msgf("error while executing the template : %s", data)
 		return nil
 	}
 	return buf.Bytes()
@@ -150,17 +162,10 @@ func (g *Generator) executeTemplate(data string) []byte {
 var funcMap = template.FuncMap{
 	"RandomNumber":       randomInt,
 	"RandomUUID":         randomUUID,
-	"RandomAplhaNumeric": randomAlphaNumeric,
+	"RandomAlphaNumeric": randomAlphaNumeric,
 }
 
 const alphaNumericChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-var (
-	alphaNumericBytes = []byte(alphaNumericChars)
-	alphaNumericLen   = len(alphaNumericBytes)
-	randomSource      = rand.NewSource(time.Now().UnixNano())
-	randomGenerator   = rand.New(randomSource)
-)
 
 func randomAlphaNumeric(length ...int) string {
 	l := 10
@@ -170,18 +175,18 @@ func randomAlphaNumeric(length ...int) string {
 
 	b := make([]byte, l)
 	for i := range b {
-		b[i] = alphaNumericBytes[randomGenerator.Intn(alphaNumericLen)]
+		b[i] = alphaNumericChars[rand.Intn(len(alphaNumericChars))]
 	}
 
 	return string(b)
 }
 
 func randomInt(max ...int) int {
-	if len(max) == 0 {
-		return randomGenerator.Intn(10000)
+	if len(max) <= 0 {
+		return rand.Intn(10000)
 	}
 
-	return randomGenerator.Intn(max[0])
+	return rand.Intn(max[0])
 }
 
 func randomUUID() string {
