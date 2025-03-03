@@ -7,6 +7,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/akshaykhairmode/wscli/pkg/ws"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -135,9 +136,15 @@ func moveCursorToStart(length int) {
 }
 
 func (m *Metrics) print(data [][]any) {
-	for _, row := range data {
+	for rowi, row := range data {
 		for i, cell := range row {
-			fmt.Fprintf(m.tw, "%v", cell)
+
+			if rowi == 0 {
+				fmt.Fprint(m.tw, ws.BlueColor("%v", cell))
+			} else {
+				fmt.Fprint(m.tw, ws.GreenColor("%v", cell))
+			}
+
 			if i < len(row)-1 {
 				fmt.Fprintf(m.tw, "\t")
 			}

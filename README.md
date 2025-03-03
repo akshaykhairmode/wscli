@@ -109,11 +109,13 @@ $ wscli --slash -c ws://localhost:8080/ws
 | Flag | Description |
 |------|-------------|
 | `--tc` | Total number of connections. |
-| `--lm` | Load message to send. Can use templates defined below. |
+| `--lm` | Load message to send. Can use templates defined below. File input supported. |
 | `--mps` | Messages per second (default: 1). |
-| `--am` | Authentication message. Can use templates defined below. |
+| `--am` | Authentication message. Can use templates defined below. File input supported. |
 | `--waa` | Wait time after authentication before sending load messages. |
 | `--rups` | Connections ramp-up per second (default: 1). |
+
+**Note**: `--lm` and `--am` also support file input. Provide an absolute path to send messages from a file. The file reading will restart from the first line when EOF is reached. If file is less than 10MB then we store it in memory. "\n" is the delimeter.
 
 ### Load Message Templates
 
@@ -127,10 +129,15 @@ $ wscli --slash -c ws://localhost:8080/ws
 ```sh
 $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNumber 50}}" --rups 100 --mps 10
 
+OR
+
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 100 --mps 10
+
 # Flags used:
 # --perf (enable performance testing)
 # --tc 1000 (create 1000 connections)
 # --lm "hello world {{RandomNumber 50}}" (load message, generate a random number from 0 to 50)
+# --lm "/tmp/load.txt" (load message, read from file)
 # --rups 100 (ramp up 100 connections per second)
 # --mps 10 (send 10 messages per second)
 ```

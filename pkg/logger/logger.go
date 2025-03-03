@@ -5,12 +5,15 @@ import (
 	"strings"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
+	"github.com/fatih/color"
 	"github.com/rs/zerolog"
 )
 
 var globalLogger *zerolog.Logger
 
 const logPrefix = "WSCLI:: "
+
+var yellowBG = color.New(color.BgYellow, color.FgBlack).SprintfFunc()
 
 func Init() {
 	consoleWriter := zerolog.ConsoleWriter{
@@ -25,7 +28,7 @@ func Init() {
 			return msg
 		},
 		FormatLevel: func(i any) string {
-			return ""
+			return "\r\x1b[2K" + yellowBG(strings.ToUpper(i.(string))) //add control character to clear the line before printing the log
 		},
 	}
 
