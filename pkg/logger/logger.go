@@ -1,43 +1,50 @@
 package logger
 
 import (
-	"os"
+	"io"
 	"strings"
+	"time"
 
 	"github.com/akshaykhairmode/wscli/pkg/config"
-	"github.com/fatih/color"
 	"github.com/rs/zerolog"
 )
 
 var globalLogger *zerolog.Logger
 
-const logPrefix = "WSCLI:: "
+var defaultFormatLevelFunc = func(i any) string {
+	level := strings.ToUpper(i.(string))
+	switch level {
+	case "ERROR":
+		return "[red]" + level + "[white]"
+	case "DEBUG":
+		return "[gray]" + level + "[white]"
+	case "INFO":
+		return "[blue]" + level + "[white]"
+	}
+	return level
+}
 
-var yellowBG = color.New(color.BgYellow, color.FgBlack).SprintfFunc()
+func Init(out io.Writer, formatLevelFunc func(i any) string) {
 
-func Init() {
+	if formatLevelFunc == nil {
+		formatLevelFunc = defaultFormatLevelFunc
+	}
+
 	consoleWriter := zerolog.ConsoleWriter{
-		Out:             os.Stderr,
-		NoColor:         config.Flags.IsNoColor(),
-		FormatTimestamp: func(i any) string { return "" },
-		FormatMessage: func(i any) string {
-			msg := i.(string)
-			if !strings.HasPrefix(msg, logPrefix) {
-				return logPrefix + msg
-			}
-			return msg
-		},
-		FormatLevel: func(i any) string {
-			return "\r\x1b[2K" + yellowBG(strings.ToUpper(i.(string))) //add control character to clear the line before printing the log
+		Out:         out,
+		NoColor:     true,
+		FormatLevel: formatLevelFunc,
+		FormatTimestamp: func(i any) string {
+			return time.Now().Format("15:04:05.000")
 		},
 	}
 
-	var l zerolog.Logger
+	l := zerolog.New(consoleWriter).With().Logger()
 
 	if config.Flags.IsVerbose() {
-		l = zerolog.New(consoleWriter).With().Logger().Level(zerolog.DebugLevel)
+		l = l.Level(zerolog.DebugLevel)
 	} else {
-		l = zerolog.New(consoleWriter).With().Logger().Level(zerolog.InfoLevel)
+		l = l.Level(zerolog.InfoLevel)
 	}
 
 	globalLogger = &l

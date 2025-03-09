@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"os/signal"
@@ -36,10 +37,12 @@ func newUpgrader() *websocket.Upgrader {
 		// echo
 		fmt.Println("OnOpen:", c.RemoteAddr().String())
 
-		// go func() {
-		// 	time.Sleep(5 * time.Second)
-		// 	c.WriteClose(3008, "closing after 10s")
-		// }()
+		if rand.IntN(10) > 5 {
+			go func() {
+				time.Sleep(5 * time.Second)
+				c.WriteClose(3008, "closing after 5s")
+			}()
+		}
 
 	})
 	u.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {

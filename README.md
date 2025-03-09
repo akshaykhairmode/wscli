@@ -92,6 +92,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--verbose` | `-v` | Enable debug logging. |
 | `--version` | `-V` | Show version information. |
 | `--wait` | `-w` | Wait time after execution (`1s`, `1m`, `1h`). |
+| `--print-interval` | | The interval for printing the output. Default is 1s. |
 | `--perf` | | Enable performance testing. |
 
 ## 🛠 Slash Commands (Enable via `--slash`)
@@ -114,6 +115,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--am` | Authentication message. Can use templates defined below. File input supported. |
 | `--waa` | Wait time after authentication before sending load messages. |
 | `--rups` | Connections ramp-up per second (default: 1). |
+| `--outfile` | Do not open the tview output and write the output to file. |
 
 **Note**: `--lm` and `--am` also support file input. Provide an absolute path to send messages from a file. The file reading will restart from the first line when EOF is reached. If file is less than 10MB then we store it in memory. "\n" is the delimeter.
 
@@ -141,6 +143,14 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 1
 # --rups 100 (ramp up 100 connections per second)
 # --mps 10 (send 10 messages per second)
 ```
+
+**output**:
+
+![perf-output](assets/output.png)
+
+Output with `-v`
+ 
+![perf-output-verbose](assets/verbose-output.png)
 
 ## 🚧 Upcoming Features
 

@@ -303,3 +303,25 @@ func (c *Flag) ShouldProcessAsCmd() bool {
 
 	return false
 }
+
+func (c *Flag) GetPrintInterval() time.Duration {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.printOutputInterval
+}
+
+func (c *Flag) SetPrintInterval(dur time.Duration) {
+	c.printOutputInterval = dur
+}
+
+func (c *Flag) GetPerfOutfile() string {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.perf.LogOutFile
+}
+
+func (c *Flag) SetPerfOutfile(file string) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.perf.LogOutFile = file
+}

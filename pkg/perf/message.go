@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type MessageGetter interface {
+type messageGetter interface {
 	Get() []byte
 }
 
@@ -26,7 +26,7 @@ type File struct {
 
 const dataChanSize = 1000
 
-func NewMessage(fpath string) (MessageGetter, error) {
+func NewMessage(fpath string) (messageGetter, error) {
 
 	isFile, size := isFilePath(fpath)
 	if !isFile {
@@ -83,12 +83,14 @@ func (m *File) readWorker() {
 		}
 
 		if err == io.EOF {
-			m.f.Seek(0, 0)
+			if _, err := m.f.Seek(0, 0); err != nil {
+				logger.Err(err).Msg("error while seeking")
+			}
 			m.reader.Reset(m.f)
 			continue
 		}
 
-		logger.Debug().Err(err).Msg("error while reading the file")
+		logger.Err(err).Msg("error while reading the file")
 	}
 
 }
@@ -111,7 +113,7 @@ type DefaultMessageGetter struct {
 	tmpl *template.Template
 }
 
-func NewDefaultMessageGetter(msg string) (MessageGetter, error) {
+func NewDefaultMessageGetter(msg string) (messageGetter, error) {
 
 	tmpl := template.New("parse").Funcs(funcMap)
 	if err := parseTemplate(tmpl, msg); err != nil {

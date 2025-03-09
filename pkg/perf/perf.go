@@ -2,7 +2,6 @@ package perf
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -18,11 +17,17 @@ import (
 type Generator struct {
 	config      config.Perf
 	metric      *Metrics
-	loadMessage MessageGetter
-	authMessage MessageGetter
+	loadMessage messageGetter
+	authMessage messageGetter
 }
 
 func New(config config.Perf) (*Generator, error) {
+
+	if config.LogOutFile != "" {
+		logger.Init(LogBuffer, fileFormatLevelFunc)
+	} else {
+		logger.Init(LogBuffer, nil)
+	}
 
 	if config.TotalConns <= 0 {
 		return nil, fmt.Errorf("total number of connections are required")
@@ -40,43 +45,57 @@ func New(config config.Perf) (*Generator, error) {
 
 	return &Generator{
 		config:      config,
-		metric:      NewMetrics(int64(config.TotalConns)),
+		metric:      NewMetrics(int64(config.TotalConns), config.LogOutFile),
 		loadMessage: lm,
 		authMessage: am,
 	}, nil
 }
 
-func (g *Generator) Run() {
+func (g *Generator) Run(showTview bool) {
 
 	go func() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 		<-sigs
-		log.Printf("\n\n")
+		g.metric.output.Stop()
 		os.Exit(0)
 	}()
 
+	logger.Info().Msg("Started the load test")
+
 	wg := &sync.WaitGroup{}
 
-	total := g.config.TotalConns
+	go func() {
 
-loop:
-	for range time.Tick(time.Second) {
+		total := g.config.TotalConns
 
-		for range g.config.RampUpConnsPerSecond {
+	loop:
+		for range time.Tick(time.Second) {
 
-			if total <= 0 {
-				break loop
+			for range g.config.RampUpConnsPerSecond {
+
+				if total <= 0 {
+					break loop
+				}
+
+				wg.Add(1)
+				go g.processConnection(wg)
+				total--
 			}
 
-			wg.Add(1)
-			go g.processConnection(wg)
-			total--
 		}
+	}()
 
+	defer g.metric.printFinalMetrics()
+
+	if showTview {
+		g.metric.output.Start()
+	} else {
+		wg.Wait()
+
+		select {}
 	}
 
-	wg.Wait()
 }
 
 func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup) {
@@ -99,7 +118,7 @@ func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup) {
 
 func (g *Generator) processConnection(wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer g.metric.DecrActiveConnections()
+	defer g.metric.IncrDroppedConnections()
 
 	//connect
 	now := time.Now()
@@ -108,6 +127,7 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 		logger.Error().Err(err).Msg("error while connecting")
 		return
 	}
+	defer g.metric.DecrActiveConnections()
 	g.metric.IncrActiveConnections()
 	g.metric.SetAvgConnectTime(time.Since(now))
 
@@ -140,7 +160,7 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 		now := time.Now()
 		if err := conn.WriteMessage(websocket.TextMessage, g.loadMessage.Get()); err != nil {
 			g.metric.IncrFailedMessages()
-			logger.Debug().Err(err).Msg("error while sending the load message")
+			logger.Err(err).Msg("error while sending the load message")
 			return
 		}
 		g.metric.SetAvgMessageTime(time.Since(now))

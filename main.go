@@ -23,7 +23,7 @@ func init() {
 
 func main() {
 
-	logger.Init()
+	logger.Init(os.Stdout, nil)
 
 	if config.Flags.IsShowVersion() {
 		logger.Info().Msgf("CLI Version : %s", CLIVersion)
@@ -35,7 +35,8 @@ func main() {
 		if err != nil {
 			logger.Fatal().Err(err).Msg("error while creating perf instance")
 		}
-		gen.Run()
+
+		gen.Run(config.Flags.GetPerfOutfile() == "")
 		return
 	}
 

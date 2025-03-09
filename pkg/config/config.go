@@ -12,14 +12,15 @@ import (
 )
 
 type Flag struct {
-	connectURL  string
-	auth        string
-	headers     []string
-	origin      string
-	execute     []string
-	wait        time.Duration
-	subProtocol []string
-	proxy       string
+	connectURL          string
+	auth                string
+	headers             []string
+	origin              string
+	execute             []string
+	wait                time.Duration
+	printOutputInterval time.Duration
+	subProtocol         []string
+	proxy               string
 
 	perf Perf
 
@@ -57,6 +58,7 @@ type Perf struct {
 	AuthMessage          string        //the auth message which needs to be send as soon as connecting.
 	WaitAfterAuth        time.Duration //wait for x number of time before starting to send load.
 	RampUpConnsPerSecond int           //how many connections to add every second
+	LogOutFile           string        //give the file path where to write the logs
 }
 
 var Flags *Flag
@@ -90,6 +92,7 @@ func Get() *Flag {
 	pflag.StringSliceVarP(&cfg.execute, "execute", "x", []string{}, "Execute a command after connecting (use multiple times for multiple commands).")
 	pflag.DurationVarP(&cfg.wait, "wait", "w", 0, "Wait time after command execution (1s, 1m, 1h).")
 	pflag.StringSliceVarP(&cfg.subProtocol, "sub-protocol", "s", []string{}, "Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times).")
+	pflag.DurationVar(&cfg.printOutputInterval, "print-interval", time.Second, "how often to print the status on the terminal")
 
 	pflag.StringVar(&cfg.tls.CA, "ca", "", "Path to the CA certificate file (optional).")
 	pflag.StringVar(&cfg.tls.Cert, "cert", "", "Path to the client certificate file (optional).")
@@ -103,6 +106,7 @@ func Get() *Flag {
 	pflag.StringVar(&cfg.perf.AuthMessage, "am", "", "Authentication message to send to the server")
 	pflag.DurationVar(&cfg.perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
 	pflag.IntVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
+	pflag.StringVar(&cfg.perf.LogOutFile, "outfile", "", "Write to file instead of output on terminal")
 
 	pflag.Parse()
 
@@ -118,6 +122,18 @@ func Get() *Flag {
 	cfg.isSTDin = isInputFromPipe()
 
 	return &cfg
+}
+
+var IsSTDoutRedirected bool
+
+func init() {
+	fi, err := os.Stdout.Stat()
+	if err != nil {
+		IsSTDoutRedirected = false
+		return
+	}
+
+	IsSTDoutRedirected = fi.Mode().IsRegular()
 }
 
 func isInputFromPipe() bool {
