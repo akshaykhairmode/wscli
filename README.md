@@ -65,6 +65,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 - **📌 JSON Pretty Printing:** Format JSON responses using `--jspp`.
 - **⌨️ Terminal Shortcuts:** Supports readline shortcuts like `Ctrl+W` (delete word) and `Ctrl+R` (reverse search). [See full list](https://github.com/chzyer/readline/blob/master/doc/shortcut.md).
 - **🗂️ Binary File Transfer:** Send a file as a binary message.
+- **📊 Load Testing:** Perform load tests using the `--perf` flag.
 
 ## 🛠 Available Flags
 
