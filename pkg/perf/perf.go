@@ -98,8 +98,12 @@ func (g *Generator) Run(showTview bool) {
 
 }
 
-func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup) {
+func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup, waitChan chan struct{}) {
 	defer wg.Done()
+
+	defer func() {
+		waitChan <- struct{}{}
+	}()
 
 	for {
 		_, data, err := conn.ReadMessage()
@@ -133,9 +137,14 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 
 	defer closef()
 
+	waitChan := make(chan struct{}, 1)
+	defer func() {
+		<-waitChan
+	}()
+
 	//read messages
 	wg.Add(1)
-	go g.messgeReceiver(conn, wg)
+	go g.messgeReceiver(conn, wg, waitChan)
 
 	//send auth message
 	if g.config.AuthMessage != "" {
