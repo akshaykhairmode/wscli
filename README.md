@@ -1,6 +1,6 @@
 # wscli
 
-A lightweight and powerful Go command-line tool for interacting with WebSocket servers. Designed for testing, debugging, and scripting, `wscli` provides functionality similar to `wscat` but with additional features. This tool is actively developed.
+A lightweight and powerful Go command-line tool for interacting with WebSocket servers. Designed for testing, debugging, and scripting, `wscli` provides functionality similar to `wscat` but with additional features. Supports quick load testing.
 
 ## 🚀 Installation
 
