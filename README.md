@@ -149,9 +149,7 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 1
 **output**:
 
 ![perf-output](assets/output.png)
+
+**Verbose output**:
  
 ![perf-output-verbose](assets/verbose-output.png)
-
-## 🚧 Upcoming Features
-
-- **WebSocket Listener:** Implement a feature to start a WebSocket server.
