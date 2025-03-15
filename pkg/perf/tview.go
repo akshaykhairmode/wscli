@@ -24,6 +24,9 @@ const (
 	MessageMeanTime = "M-Mean"
 	MessageP95Time  = "M-P95"
 	MessageP99Time  = "M-P99"
+
+	StartTime = "StartTime"
+	Uptime    = "Uptime"
 )
 
 var headings = []string{
@@ -41,6 +44,9 @@ var headings = []string{
 	MessageMeanTime,
 	MessageP95Time,
 	MessageP99Time,
+
+	StartTime,
+	Uptime,
 }
 
 var logAutoScroll = true

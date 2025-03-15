@@ -26,7 +26,7 @@ func main() {
 	logger.Init(os.Stdout, nil)
 
 	if config.Flags.IsShowVersion() {
-		logger.Info().Msgf("CLI Version : %s", CLIVersion)
+		fmt.Printf("CLI Version : %s\n", CLIVersion)
 		return
 	}
 

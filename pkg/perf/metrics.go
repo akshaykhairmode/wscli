@@ -28,6 +28,8 @@ type Metrics struct {
 
 	errors errMsg
 	output Printer
+
+	startTime time.Time
 }
 
 type Printer interface {
@@ -83,7 +85,8 @@ func NewMetrics(totalConns int64, out string) *Metrics {
 			data: make(map[string]int),
 			mux:  &sync.RWMutex{},
 		},
-		output: output,
+		output:    output,
+		startTime: time.Now(),
 	}
 
 	metrics.MustRegister("active_connections", m.activeConnections)
@@ -180,6 +183,10 @@ func (m *Metrics) getTable(heading []string) []string {
 			final = append(final, durToString(m.messageTime.Snapshot().Percentile(0.95)))
 		case MessageP99Time:
 			final = append(final, durToString(m.messageTime.Snapshot().Percentile(0.99)))
+		case StartTime:
+			final = append(final, m.startTime.Format("3:04:05 PM"))
+		case Uptime:
+			final = append(final, time.Since(m.startTime).Round(time.Second).String())
 		}
 	}
 
