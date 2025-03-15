@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/akshaykhairmode/wscli/pkg/logger"
 )
@@ -20,7 +21,7 @@ func NewFileOutput(path string) *FileOutput {
 		logger.Fatal().Err(err).Msg("error while opening the output file")
 	}
 
-	w := tabwriter.NewWriter(f, 0, 0, 3, ' ', tabwriter.AlignRight|tabwriter.Debug)
+	w := tabwriter.NewWriter(f, 0, 0, 2, ' ', tabwriter.AlignRight|tabwriter.Debug)
 
 	out := &FileOutput{
 		f: f,
@@ -59,18 +60,18 @@ func (fo *FileOutput) UpdateTableAndLogs(data []string, errors errMsg) {
 		return
 	}
 
+	now := time.Now().Format(timeFormat)
+
 	errs, order := errors.Get()
-	builder := strings.Builder{}
 	for _, v := range order {
 		if errs[v] > 1 {
-			builder.WriteString(fmt.Sprintf("%s (%d)\n", v, errs[v]))
+			fmt.Fprintf(fo.w, "%s %s (%d)\n", now, v, errs[v])
 		} else {
-			builder.WriteString(fmt.Sprintf("%s\n", v))
+			fmt.Fprintf(fo.w, "%s %s\n", now, v)
 		}
-
 	}
 
-	fo.tWrite(builder.String())
+	fmt.Fprintln(fo.w, "----------------------------------------------------------------------------------")
 }
 
 func (fo *FileOutput) Start() {}

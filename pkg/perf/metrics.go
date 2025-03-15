@@ -29,7 +29,8 @@ type Metrics struct {
 	errors errMsg
 	output Printer
 
-	startTime time.Time
+	startTime    time.Time
+	startTimeStr string
 }
 
 type Printer interface {
@@ -72,6 +73,8 @@ func NewMetrics(totalConns int64, out string) *Metrics {
 		output = NewFileOutput(out)
 	}
 
+	now := time.Now()
+
 	m := &Metrics{
 		activeConnections:     metrics.NewCounter(),
 		droppedConnections:    metrics.NewCounter(),
@@ -85,8 +88,9 @@ func NewMetrics(totalConns int64, out string) *Metrics {
 			data: make(map[string]int),
 			mux:  &sync.RWMutex{},
 		},
-		output:    output,
-		startTime: time.Now(),
+		output:       output,
+		startTime:    now,
+		startTimeStr: now.Format(timeFormat),
 	}
 
 	metrics.MustRegister("active_connections", m.activeConnections)
@@ -152,9 +156,18 @@ func (m *Metrics) printFinalMetrics() {
 
 }
 
+const (
+	timeFormat = "3:04:05 PM"
+	p95        = 0.95
+	p99        = 0.99
+)
+
 func (m *Metrics) getTable(heading []string) []string {
 
 	final := []string{}
+
+	connectTime := m.connectTime.Snapshot()
+	messageTime := m.messageTime.Snapshot()
 
 	for _, val := range heading {
 
@@ -172,19 +185,19 @@ func (m *Metrics) getTable(heading []string) []string {
 		case TotalFailedMessages:
 			final = append(final, intToString(m.failedMessages.Count()))
 		case ConnectionMeanTime:
-			final = append(final, durToString(m.connectTime.Snapshot().Mean()))
+			final = append(final, durToString(connectTime.Mean()))
 		case ConnectionP95Time:
-			final = append(final, durToString(m.connectTime.Snapshot().Percentile(0.95)))
+			final = append(final, durToString(connectTime.Percentile(p95)))
 		case ConnectionP99Time:
-			final = append(final, durToString(m.connectTime.Snapshot().Percentile(0.99)))
+			final = append(final, durToString(connectTime.Percentile(p99)))
 		case MessageMeanTime:
-			final = append(final, durToString(m.messageTime.Snapshot().Mean()))
+			final = append(final, durToString(messageTime.Mean()))
 		case MessageP95Time:
-			final = append(final, durToString(m.messageTime.Snapshot().Percentile(0.95)))
+			final = append(final, durToString(messageTime.Percentile(p95)))
 		case MessageP99Time:
-			final = append(final, durToString(m.messageTime.Snapshot().Percentile(0.99)))
+			final = append(final, durToString(messageTime.Percentile(p99)))
 		case StartTime:
-			final = append(final, m.startTime.Format("3:04:05 PM"))
+			final = append(final, m.startTimeStr)
 		case Uptime:
 			final = append(final, time.Since(m.startTime).Round(time.Second).String())
 		}
@@ -212,26 +225,6 @@ func calculatePercentage(value, total int64) string {
 	return fmt.Sprintf("%d (%.2f%%)", value, percentage)
 
 }
-
-// func (m *Metrics) print(data [][]any) {
-// 	for rowi, row := range data {
-// 		for i, cell := range row {
-
-// 			if rowi == 0 {
-// 				fmt.Fprint(m.tw, ws.BlueColor("%v", cell))
-// 			} else {
-// 				fmt.Fprint(m.tw, ws.GreenColor("%v", cell))
-// 			}
-
-// 			if i < len(row)-1 {
-// 				fmt.Fprintf(m.tw, "\t")
-// 			}
-// 		}
-// 		fmt.Fprintf(m.tw, "\t\n")
-// 	}
-// 	m.tw.Flush()
-// 	moveCursorToStart(len(data))
-// }
 
 func (m *Metrics) IncrDroppedConnections() {
 	m.droppedConnections.Inc(1)
