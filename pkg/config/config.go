@@ -19,6 +19,7 @@ type Flag struct {
 	execute             []string
 	wait                time.Duration
 	printOutputInterval time.Duration
+	pingInterval        time.Duration
 	subProtocol         []string
 	proxy               string
 
@@ -93,6 +94,7 @@ func Get() *Flag {
 	pflag.DurationVarP(&cfg.wait, "wait", "w", 0, "Wait time after command execution (1s, 1m, 1h).")
 	pflag.StringSliceVarP(&cfg.subProtocol, "sub-protocol", "s", []string{}, "Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times).")
 	pflag.DurationVar(&cfg.printOutputInterval, "print-interval", time.Second, "how often to print the status on the terminal")
+	pflag.DurationVar(&cfg.pingInterval, "ping-interval", 30*time.Second, "how often to ping the connections which are created")
 
 	pflag.StringVar(&cfg.tls.CA, "ca", "", "Path to the CA certificate file (optional).")
 	pflag.StringVar(&cfg.tls.Cert, "cert", "", "Path to the client certificate file (optional).")

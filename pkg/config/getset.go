@@ -292,6 +292,12 @@ func (t *TLS) SetCert(cert string) {
 	t.Cert = cert
 }
 
+func (c *Flag) GetPingInterval() time.Duration {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.pingInterval
+}
+
 func (c *Flag) ShouldProcessAsCmd() bool {
 	if len(Flags.GetExecute()) > 0 && Flags.GetWait() > 0 {
 		return true

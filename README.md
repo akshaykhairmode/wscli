@@ -94,6 +94,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--version` | `-V` | Show version information. |
 | `--wait` | `-w` | Wait time after execution (`1s`, `1m`, `1h`). |
 | `--print-interval` | | The interval for printing the output. Default is 1s. |
+| `--ping-interval` | | The interval for pinging to the connected server. Default is 30s. |
 | `--perf` | | Enable performance testing. |
 
 ## 🛠 Slash Commands (Enable via `--slash`)

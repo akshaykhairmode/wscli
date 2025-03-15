@@ -101,7 +101,7 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 }
 
 func PingWorker(c *websocket.Conn) {
-	for range time.Tick(5 * time.Second) {
+	for range time.Tick(config.Flags.GetPingInterval()) {
 		err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
 		if err != nil {
 			if err.Error() == "websocket: close sent" {
