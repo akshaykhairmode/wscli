@@ -149,8 +149,6 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 1
 **output**:
 
 ![perf-output](assets/output.png)
-
-Output with `-v`
  
 ![perf-output-verbose](assets/verbose-output.png)
 
