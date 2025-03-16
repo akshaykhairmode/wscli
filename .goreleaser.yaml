@@ -44,6 +44,7 @@ changelog:
 brews:
   - name: wscli
     repository:
+      name: homebrew-tools
       git:
         url: git@github.com:akshaykhairmode/homebrew-tools.git
     homepage: "https://github.com/akshaykhairmode/wscli"
