@@ -43,6 +43,7 @@ changelog:
 
 brews:
   - name: wscli
+    token: "{{ .Env.GITHUB_TOKEN }}"
     repository:
       name: homebrew-tools
       git:
