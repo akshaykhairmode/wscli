@@ -4,7 +4,7 @@ A lightweight and powerful Go command-line tool for interacting with WebSocket s
 
 ## 🚀 Installation
 
-### Using Docker
+### Using `Docker`
 ```sh
 $ docker run -it akshaykhairmode/wscli:latest -c "ws://example.com/ws"
 ```
@@ -12,6 +12,12 @@ $ docker run -it akshaykhairmode/wscli:latest -c "ws://example.com/ws"
 ### Using `go install`
 ```sh
 go install github.com/akshaykhairmode/wscli@latest
+```
+
+### Using `homebrew`
+```sh
+brew tap akshaykhairmode/tools
+brew install akshaykhairmode/tools/wscli
 ```
 
 ### Download Prebuilt Binaries
