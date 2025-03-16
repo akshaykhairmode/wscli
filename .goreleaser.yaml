@@ -46,7 +46,7 @@ brews:
     repository:
       name: homebrew-tools
       git:
-        url: git@github.com:akshaykhairmode/homebrew-tools.git
+        url: https://github.com/akshaykhairmode/homebrew-tools.git
     homepage: "https://github.com/akshaykhairmode/wscli"
     description: "A command-line WebSocket client"
     license: "GNU v3"
