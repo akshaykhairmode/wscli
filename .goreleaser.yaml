@@ -43,9 +43,9 @@ changelog:
 
 brews:
   - name: wscli
-    token: "{{ .Env.GITHUB_TOKEN }}"
     repository:
       name: homebrew-tools
+      token: "{{ .Env.GITHUB_TOKEN }}"
       git:
         url: https://github.com/akshaykhairmode/homebrew-tools.git
     homepage: "https://github.com/akshaykhairmode/wscli"
