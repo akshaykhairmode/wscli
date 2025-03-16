@@ -40,3 +40,16 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+brews:
+  - name: wscli
+    repository:
+      git:
+        url: git@github.com:akshaykhairmode/homebrew-tools.git
+    homepage: "https://github.com/akshaykhairmode/wscli"
+    description: "A command-line WebSocket client"
+    license: "GNU v3"
+    commit_author:
+      name: akshaykhairmode
+      email: akshaykhairmode@gmail.com
+    commit_msg_template: "Update wscli formula to {{ .Tag }}"
