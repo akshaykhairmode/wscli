@@ -102,6 +102,8 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--print-interval` | | The interval for printing the output. Default is 1s. |
 | `--ping-interval` | | The interval for pinging to the connected server. Default is 30s. |
 | `--perf` | | Enable performance testing. |
+| `--std-out` | | print the received messages in standard output, default is standard error. |
+
 
 ## 🛠 Slash Commands (Enable via `--slash`)
 

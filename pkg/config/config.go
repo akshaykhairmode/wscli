@@ -37,6 +37,8 @@ type Flag struct {
 	isGzipResponse            bool
 	isPerf                    bool
 
+	isStdOut bool
+
 	help    bool
 	isSTDin bool // read from stdin, cannot send messages to the server other than what is in the stdin
 
@@ -84,6 +86,7 @@ func Get() *Flag {
 	pflag.BoolVar(&cfg.isJSONPrettyPrint, "jspp", false, "Enable JSON pretty printing for responses.")
 	pflag.BoolVarP(&cfg.isBinary, "binary", "b", false, "Send hex encoded data to server")
 	pflag.BoolVar(&cfg.isGzipResponse, "gzipr", false, "Enable gzip decoding if server messages are gzip-encoded. (Note: Server must send messages as binary.)")
+	pflag.BoolVar(&cfg.isStdOut, "std-out", false, "print the received messages in standard output, default is standard error")
 
 	pflag.StringVarP(&cfg.connectURL, "connect", "c", "", "WebSocket connection URL.")
 	pflag.StringVar(&cfg.proxy, "proxy", "", "Use a proxy URL.")

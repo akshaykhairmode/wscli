@@ -256,6 +256,12 @@ func (c *Flag) IsGzipResponse() bool {
 	return c.isGzipResponse
 }
 
+func (c *Flag) IsStdOut() bool {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	return c.isStdOut
+}
+
 func (c *Flag) SetGzipResponse(gzipr bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()

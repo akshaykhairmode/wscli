@@ -16,12 +16,13 @@ import (
 
 var CLIVersion string
 
-func init() {
-	log.SetOutput(os.Stderr)
-	log.SetFlags(0)
-}
-
 func main() {
+
+	log.SetOutput(os.Stderr)
+	if config.Flags.IsStdOut() {
+		log.SetOutput(os.Stdout)
+	}
+	log.SetFlags(0)
 
 	logger.Init(os.Stdout, nil)
 
