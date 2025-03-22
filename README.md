@@ -165,3 +165,7 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 1
 **Verbose output**:
  
 ![perf-output-verbose](assets/verbose-output.png)
+
+**Demo**
+
+![wscli-gif](assets/wscli.gif)
