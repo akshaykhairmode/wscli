@@ -7,6 +7,8 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"sync"
+	"sync/atomic"
 	"text/template"
 	"time"
 
@@ -15,7 +17,8 @@ import (
 )
 
 type messageGetter interface {
-	Get() []byte
+	Get(any) []byte
+	GetTemplateString() string
 }
 
 type File struct {
@@ -61,8 +64,12 @@ func NewMessage(fpath string) (messageGetter, error) {
 	return mg, nil
 }
 
-func (m *File) Get() []byte {
+func (m *File) Get(_ any) []byte {
 	return <-m.dataChan
+}
+
+func (m *File) GetTemplateString() string {
+	return ""
 }
 
 func (m *File) logWorker() {
@@ -111,7 +118,10 @@ func isFilePath(path string) (bool, int64) {
 type DefaultMessageGetter struct {
 	msg  []byte
 	tmpl *template.Template
+	pool *sync.Pool
 }
+
+var uniqueSequenceMap = &sync.Map{}
 
 func NewDefaultMessageGetter(msg string) (messageGetter, error) {
 
@@ -123,23 +133,66 @@ func NewDefaultMessageGetter(msg string) (messageGetter, error) {
 	return &DefaultMessageGetter{
 		msg:  []byte(msg),
 		tmpl: tmpl,
+		pool: &sync.Pool{
+			New: func() interface{} {
+				return bytes.NewBuffer(make([]byte, 0, len(msg)*2))
+			},
+		},
 	}, nil
 }
 
-func (m *DefaultMessageGetter) Get() []byte {
-	buf := bytes.NewBuffer(nil)
-	err := m.tmpl.Execute(buf, m.msg)
+func (m *DefaultMessageGetter) Get(data any) []byte {
+
+	buf, release := m.getBuffer()
+	defer release()
+
+	err := m.tmpl.Execute(buf, data)
 	if err != nil {
 		logger.Error().Err(err).Msgf("error while executing the template : %s", m.msg)
 		return nil
 	}
+
 	return buf.Bytes()
 }
 
+func (m *DefaultMessageGetter) getBuffer() (*bytes.Buffer, func()) {
+	buf := m.pool.Get().(*bytes.Buffer)
+	return buf, func() {
+		buf.Reset()
+		m.pool.Put(buf)
+	}
+}
+
+func (m *DefaultMessageGetter) GetTemplateString() string {
+	return string(m.msg)
+}
+
 var funcMap = template.FuncMap{
-	"RandomNumber":       randomInt,
-	"RandomUUID":         randomUUID,
-	"RandomAlphaNumeric": randomAlphaNumeric,
+	"RandomNum":  randomInt,
+	"RandomUUID": randomUUID,
+	"RandomAN":   randomAlphaNumeric,
+	"UniqSeq":    getUniqueSequence,
+}
+
+func getUniqueSequence(group string, start ...uint64) uint64 {
+
+	val, _ := uniqueSequenceMap.LoadOrStore(group, getUint64Counter(start...))
+	tc := val.(*atomic.Uint64)
+	defer func() {
+		tc.Add(1)
+	}()
+
+	return tc.Load()
+}
+
+func getUint64Counter(start ...uint64) *atomic.Uint64 {
+	c := &atomic.Uint64{}
+	if len(start) <= 0 || start[0] <= 0 {
+		return c
+	}
+
+	c.Store(start[0])
+	return c
 }
 
 const alphaNumericChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

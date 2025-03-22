@@ -131,11 +131,15 @@ $ wscli --slash -c ws://localhost:8080/ws
 
 ### Load Message Templates
 
-| Function | Description |
-|----------|-------------|
-| `RandomNumber <max>` | Generates a random number (default: 0–10,000). |
-| `RandomUUID` | Generates a random UUID. |
-| `RandomAlphaNumeric <length>` | Generates a random alphanumeric string (default length: 10). |
+| **Function**                          | **Description**                                                                                                   | **Parameters**                      | **Data Types**                  |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------|------------------------------------|--------------------------------|
+| `RandomNum`                           | Generates a random number between 0 and `<max>` (default range: 0–10,000).                                      | `<max>` (optional)                 | Integer                        |
+| `RandomUUID`                          | Generates a random UUID.                                                                                         | None                               | N/A                            |
+| `RandomAN`                            | Generates a random alphanumeric string with the specified `<length>` (default: 10 characters).                   | `<length>` (optional)              | Integer                        |
+| `UniqSeq`                             | Generates a unique atomic sequence within a specified `<group>`. Multiple connections share the same sequence when using the same group. The `<start>` value sets the initial number (default: 0). If different start values are provided, the first one is used. Examples: <br> - `{{UniqSeq "1" 10}} != {{UniqSeq "1" 10}}` (Not the same number) <br> - `{{UniqSeq "0"}} == {{UniqSeq "1"}}` (Different counters generate the same number) | `<group>` <br> `<start>` (optional) | String <br> Integer            |
+| `.Seq`                                | Generates a sequence starting from the specified `<start>` value (default: 0). Note the `.` before `Seq`.      | `<start>` (optional)               | Integer                        |
+
+
 
 #### Example
 ```sh

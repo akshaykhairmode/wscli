@@ -1,6 +1,6 @@
 module github.com/akshaykhairmode/wscli
 
-go 1.23.6
+go 1.24.1
 
 require (
 	github.com/chzyer/readline v1.5.1
