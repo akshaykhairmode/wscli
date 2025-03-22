@@ -137,7 +137,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `RandomUUID`                          | Generates a random UUID.                                                                                         | None                               | N/A                            |
 | `RandomAN`                            | Generates a random alphanumeric string with the specified `<length>` (default: 10 characters).                   | `<length>` (optional)              | Integer                        |
 | `UniqSeq`                             | Generates a unique atomic sequence within a specified `<group>`. Multiple connections share the same sequence when using the same group. The `<start>` value sets the initial number (default: 0). If different start values are provided, the first one is used. Examples: <br> - `{{UniqSeq "1" 10}} != {{UniqSeq "1" 10}}` (Not the same number) <br> - `{{UniqSeq "0"}} == {{UniqSeq "1"}}` (Different groups generate the same number) | `<group>` <br> `<start>` (optional) | String <br> Integer            |
-| `.Seq`                                | Generates a sequence starting from the specified `<start>` value (default: 0). Note the `.` before `Seq`.      | `<start>` (optional)               | Integer                        |
+| `.Seq`                                | Generates a sequence starting from 0 for each connection. No shared counters.      |                |                         |
 
 
 

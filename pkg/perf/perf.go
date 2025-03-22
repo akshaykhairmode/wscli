@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -165,34 +164,22 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 		return
 	}
 
-	seq := Sequence{Value: &atomic.Uint64{}}
+	seqCounter := uint64(0)
 
 	//send load
 	for range time.Tick(time.Second / time.Duration(g.config.MessagePerSecond)) {
 		now := time.Now()
-		if err := conn.WriteMessage(websocket.TextMessage, g.loadMessage.Get(seq)); err != nil {
+		if err := conn.WriteMessage(websocket.TextMessage, g.loadMessage.Get(Sequence{seqCounter})); err != nil {
 			g.metric.IncrFailedMessages()
 			logger.Err(err).Msg("error while sending the load message")
 			return
 		}
 		g.metric.SetAvgMessageTime(time.Since(now))
 		g.metric.IncrSentMessages()
+		seqCounter++
 	}
 }
 
 type Sequence struct {
-	Value *atomic.Uint64
-}
-
-func (s Sequence) Seq(start ...uint64) uint64 {
-
-	defer func() {
-		s.Value.Add(1)
-	}()
-
-	if s.Value.Load() == 0 && len(start) > 0 {
-		s.Value.Store(start[0])
-	}
-
-	return s.Value.Load()
+	Seq uint64
 }

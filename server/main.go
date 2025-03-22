@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,25 +23,25 @@ var (
 func newUpgrader() *websocket.Upgrader {
 	u := websocket.NewUpgrader()
 	u.SetPingHandler(func(c *websocket.Conn, s string) {
-		log.Println("Received Ping:", s)
+		// log.Println("Received Ping:", s)
 		c.WriteMessage(websocket.PongMessage, []byte(s))
 	})
 
 	u.SetPongHandler(func(c *websocket.Conn, s string) {
-		log.Println("Received Pong:", s)
+		// log.Println("Received Pong:", s)
 		c.WriteMessage(websocket.PingMessage, []byte(s))
 	})
 
 	u.OnOpen(func(c *websocket.Conn) {
 		// echo
-		fmt.Println("OnOpen:", c.RemoteAddr().String())
+		// fmt.Println("OnOpen:", c.RemoteAddr().String())
 
-		if rand.IntN(10) > 5 {
-			go func() {
-				time.Sleep(5 * time.Second)
-				c.WriteClose(3008, "closing after 5s")
-			}()
-		}
+		// if rand.IntN(10) > 5 {
+		// 	go func() {
+		// 		time.Sleep(5 * time.Second)
+		// 		c.WriteClose(3008, "closing after 5s")
+		// 	}()
+		// }
 
 	})
 	u.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {
@@ -58,7 +57,7 @@ func newUpgrader() *websocket.Upgrader {
 
 		log.Println(messageType, string(data))
 		// echo
-		fmt.Println("OnMessage:", messageType, string(data))
+		// fmt.Println("OnMessage:", messageType, string(data))
 		c.WriteMessage(messageType, data)
 	})
 	u.OnClose(func(c *websocket.Conn, err error) {
@@ -83,11 +82,11 @@ func zipStringToGzipBytes(input string) ([]byte, error) {
 }
 
 func onWebsocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	_, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Upgraded:", conn.RemoteAddr().String())
+	// fmt.Println("Upgraded:", conn.RemoteAddr().String())
 }
 
 func main() {
