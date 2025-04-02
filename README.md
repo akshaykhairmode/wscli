@@ -127,6 +127,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--wba` | Wait time before sending auth message to the server |
 | `--rups` | Connections ramp-up per second (default: 1). |
 | `--outfile` | Do not open the tview output and write the output to file. |
+| `--pconfig` | Take perf config from file. Pass the file path here. The format of the file is available [here](config.yaml). |
 
 **Note**: `--lm` and `--am` also support file input. Provide an absolute path to send messages from a file. The file reading will restart from the first line when EOF is reached. If file is less than 10MB then we store it in memory. "\n" is the delimeter.
 

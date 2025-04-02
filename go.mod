@@ -13,6 +13,7 @@ require (
 	github.com/rivo/tview v0.0.0-20241227133733-17b7edb88c57
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/pflag v1.0.6
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

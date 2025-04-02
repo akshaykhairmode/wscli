@@ -1,0 +1,8 @@
+tc: 100 #total number of connections.
+lm: "Hello, server!" #the message which needs to be sent.
+mps: 0 #message per second. When set to 0 will send the message only once.
+am: "AUTH user:password" #Auth Message
+wba: 5s #wait before sending authorization.
+waa: 2s #wait after sending authorization.
+rups: 1 #ramp up per second
+outfile: "" #if empty will open tview, else will write the output to given file.

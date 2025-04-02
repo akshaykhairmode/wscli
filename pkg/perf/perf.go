@@ -12,6 +12,7 @@ import (
 	"github.com/akshaykhairmode/wscli/pkg/logger"
 	"github.com/akshaykhairmode/wscli/pkg/ws"
 	"github.com/gorilla/websocket"
+	"gopkg.in/yaml.v3"
 )
 
 type Generator struct {
@@ -21,31 +22,47 @@ type Generator struct {
 	authMessage messageGetter
 }
 
-func New(config config.Perf) (*Generator, error) {
+func New(pconfig config.Perf) (*Generator, error) {
 
-	if config.LogOutFile != "" {
+	//If config file is passed, overwrite perf config.
+	if pconfig.Config != "" {
+		cfgBytes, err := os.ReadFile(pconfig.Config)
+		if err != nil {
+			return nil, fmt.Errorf("error while reading the config file : %w", err)
+		}
+
+		if err := yaml.Unmarshal(cfgBytes, &pconfig); err != nil {
+			return nil, fmt.Errorf("error while unmarshalling the config file : %w", err)
+		}
+
+		config.Flags.SetPerfConfig(pconfig)
+	}
+
+	if pconfig.LogOutFile != "" {
 		logger.Init(LogBuffer, fileFormatLevelFunc)
 	} else {
 		logger.Init(LogBuffer, nil)
 	}
 
-	if config.TotalConns <= 0 {
+	if pconfig.TotalConns <= 0 {
 		return nil, fmt.Errorf("total number of connections are required")
 	}
 
-	lm, err := NewMessage(config.LoadMessage)
+	lm, err := NewMessage(pconfig.LoadMessage)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the load message : %w", err)
 	}
 
-	am, err := NewMessage(config.AuthMessage)
+	am, err := NewMessage(pconfig.AuthMessage)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the auth message : %w", err)
 	}
 
+	logger.Info().Msgf("Config Loaded : %s", pconfig)
+
 	return &Generator{
-		config:      config,
-		metric:      NewMetrics(int64(config.TotalConns), config.LogOutFile),
+		config:      pconfig,
+		metric:      NewMetrics(int64(pconfig.TotalConns), pconfig.LogOutFile),
 		loadMessage: lm,
 		authMessage: am,
 	}, nil
@@ -65,10 +82,11 @@ func (g *Generator) Run(showTview bool) {
 
 	wg := &sync.WaitGroup{}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 
 		total := g.config.TotalConns
-
 	loop:
 		for range time.Tick(time.Second) {
 
@@ -153,10 +171,16 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 
 	//send auth message
 	if g.config.AuthMessage != "" {
-		if err := conn.WriteMessage(websocket.TextMessage, g.authMessage.Get(nil)); err != nil {
-			logger.Error().Err(err).Msg("error while sending the auth message")
-			return
-		}
+		func() {
+			msg, release := g.authMessage.Get(nil)
+			defer release()
+
+			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+				logger.Error().Err(err).Msg("error while sending the auth message")
+				return
+			}
+		}()
+
 	}
 
 	//wait for auth response.
@@ -173,11 +197,16 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 
 	lmFunc := func() {
 		now := time.Now()
-		if err := conn.WriteMessage(websocket.TextMessage, g.loadMessage.Get(Sequence{seqCounter})); err != nil {
+
+		msg, release := g.loadMessage.Get(Sequence{seqCounter})
+		defer release()
+
+		if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 			g.metric.IncrFailedMessages()
 			logger.Err(err).Msg("error while sending the load message")
 			return
 		}
+
 		g.metric.SetAvgMessageTime(time.Since(now))
 		g.metric.IncrSentMessages()
 		seqCounter++

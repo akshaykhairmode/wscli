@@ -90,7 +90,7 @@ func NewTview() *Tview {
 	})
 
 	for col, h := range headings {
-		tviewTable.SetCell(0, col, tview.NewTableCell(h).SetTextColor(tcell.ColorBlue).SetAlign(tview.AlignCenter))
+		tviewTable.SetCell(0, col, tview.NewTableCell(h).SetTextColor(tcell.ColorDarkKhaki).SetAlign(tview.AlignCenter))
 	}
 
 	return &Tview{
@@ -121,7 +121,7 @@ func (tv *Tview) UpdateTableAndLogs(data []string, errors errMsg) {
 		builder := strings.Builder{}
 		for _, v := range order {
 			if errors[v] > 1 {
-				builder.WriteString(fmt.Sprintf("%s [blue](%d)[white]\n", v, errors[v]))
+				builder.WriteString(fmt.Sprintf("%s [grey](%d)[white]\n", v, errors[v]))
 			} else {
 				builder.WriteString(fmt.Sprintf("%s\n", v))
 			}

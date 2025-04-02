@@ -17,7 +17,7 @@ import (
 )
 
 type messageGetter interface {
-	Get(any) []byte
+	Get(any) ([]byte, func())
 	GetTemplateString() string
 }
 
@@ -64,8 +64,8 @@ func NewMessage(fpath string) (messageGetter, error) {
 	return mg, nil
 }
 
-func (m *File) Get(_ any) []byte {
-	return <-m.dataChan
+func (m *File) Get(_ any) ([]byte, func()) {
+	return <-m.dataChan, func() {}
 }
 
 func (m *File) GetTemplateString() string {
@@ -141,18 +141,17 @@ func NewDefaultMessageGetter(msg string) (messageGetter, error) {
 	}, nil
 }
 
-func (m *DefaultMessageGetter) Get(data any) []byte {
+func (m *DefaultMessageGetter) Get(data any) ([]byte, func()) {
 
 	buf, release := m.getBuffer()
-	defer release()
 
 	err := m.tmpl.Execute(buf, data)
 	if err != nil {
 		logger.Error().Err(err).Msgf("error while executing the template : %s", m.msg)
-		return nil
+		return nil, func() {}
 	}
 
-	return buf.Bytes()
+	return buf.Bytes(), release
 }
 
 func (m *DefaultMessageGetter) getBuffer() (*bytes.Buffer, func()) {

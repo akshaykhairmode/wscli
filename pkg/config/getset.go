@@ -22,6 +22,12 @@ func (c *Flag) GetPerfConfig() Perf {
 	return c.perf
 }
 
+func (c *Flag) SetPerfConfig(perf Perf) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	c.perf = perf
+}
+
 func (c *Flag) GetConnectURL() string {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
