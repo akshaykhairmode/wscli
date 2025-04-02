@@ -145,11 +145,11 @@ $ wscli --slash -c ws://localhost:8080/ws
 
 #### Example
 ```sh
-$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNum 50}}" --rups 100 --mps 10
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNum 50}}" --rups 100 --mi 1s
 
 OR
 
-$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 100 --mps 10
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 100 --mi 1s
 
 # Flags used:
 # --perf (enable performance testing)
@@ -157,7 +157,7 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 1
 # --lm "hello world {{RandomNumber 50}}" (load message, generate a random number from 0 to 50)
 # --lm "/tmp/load.txt" (load message, read from file)
 # --rups 100 (ramp up 100 connections per second)
-# --mps 10 (send 10 messages per second)
+# --mi 1s (send 1 message per second)
 ```
 
 **output**:
