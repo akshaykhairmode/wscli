@@ -146,6 +146,11 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go g.messgeReceiver(conn, wg, waitChan)
 
+	//Wait for some time before sending auth.
+	if g.config.WaitBeforeAuth > 0 {
+		<-time.After(g.config.WaitBeforeAuth)
+	}
+
 	//send auth message
 	if g.config.AuthMessage != "" {
 		if err := conn.WriteMessage(websocket.TextMessage, g.authMessage.Get(nil)); err != nil {
@@ -154,7 +159,7 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 		}
 	}
 
-	//wait for auth
+	//wait for auth response.
 	if g.config.WaitAfterAuth > 0 {
 		<-time.After(g.config.WaitAfterAuth)
 	}

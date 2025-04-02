@@ -59,7 +59,8 @@ type Perf struct {
 	LoadMessage          string        //the load message which needs to be sent to the server.
 	MessagePerSecond     int           //how many messages to be sent per second.
 	AuthMessage          string        //the auth message which needs to be send as soon as connecting.
-	WaitAfterAuth        time.Duration //wait for x number of time before starting to send load.
+	WaitBeforeAuth       time.Duration //wait for x amount of time before sending auth message
+	WaitAfterAuth        time.Duration //wait for x amount of time before starting to send load.
 	RampUpConnsPerSecond int           //how many connections to add every second
 	LogOutFile           string        //give the file path where to write the logs
 }
@@ -110,6 +111,7 @@ func Get() *Flag {
 	pflag.IntVar(&cfg.perf.MessagePerSecond, "mps", 0, "Number of messages to send per second")
 	pflag.StringVar(&cfg.perf.AuthMessage, "am", "", "Authentication message to send to the server")
 	pflag.DurationVar(&cfg.perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
+	pflag.DurationVar(&cfg.perf.WaitBeforeAuth, "wba", 0, "Wait time before sending authentication to server")
 	pflag.IntVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
 	pflag.StringVar(&cfg.perf.LogOutFile, "outfile", "", "Write to file instead of output on terminal")
 
