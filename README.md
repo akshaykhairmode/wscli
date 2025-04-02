@@ -124,6 +124,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--mps` | Messages per second (default: 1). |
 | `--am` | Authentication message. Can use templates defined below. File input supported. |
 | `--waa` | Wait time after authentication before sending load messages. |
+| `--wba` | Wait time before sending auth message to the server |
 | `--rups` | Connections ramp-up per second (default: 1). |
 | `--outfile` | Do not open the tview output and write the output to file. |
 
