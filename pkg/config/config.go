@@ -107,7 +107,7 @@ func Get() *Flag {
 	pflag.BoolVar(&cfg.isPerf, "perf", false, "Enable load testing")
 	pflag.IntVar(&cfg.perf.TotalConns, "tc", 0, "Total number of connections to create")
 	pflag.StringVar(&cfg.perf.LoadMessage, "lm", "", "Load message to send to the server")
-	pflag.IntVar(&cfg.perf.MessagePerSecond, "mps", 1, "Number of messages to send per second")
+	pflag.IntVar(&cfg.perf.MessagePerSecond, "mps", 0, "Number of messages to send per second")
 	pflag.StringVar(&cfg.perf.AuthMessage, "am", "", "Authentication message to send to the server")
 	pflag.DurationVar(&cfg.perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
 	pflag.IntVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")

@@ -166,8 +166,7 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 
 	seqCounter := uint64(0)
 
-	//send load
-	for range time.Tick(time.Second / time.Duration(g.config.MessagePerSecond)) {
+	lmFunc := func() {
 		now := time.Now()
 		if err := conn.WriteMessage(websocket.TextMessage, g.loadMessage.Get(Sequence{seqCounter})); err != nil {
 			g.metric.IncrFailedMessages()
@@ -177,6 +176,17 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 		g.metric.SetAvgMessageTime(time.Since(now))
 		g.metric.IncrSentMessages()
 		seqCounter++
+	}
+
+	//Send Load Mesasge only once when mps is sent.
+	if g.config.MessagePerSecond <= 0 {
+		lmFunc()
+		return
+	}
+
+	//send load
+	for range time.Tick(time.Second / time.Duration(g.config.MessagePerSecond)) {
+		lmFunc()
 	}
 }
 
