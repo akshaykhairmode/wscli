@@ -143,7 +143,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 
 #### Example
 ```sh
-$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNumber 50}}" --rups 100 --mps 10
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNum 50}}" --rups 100 --mps 10
 
 OR
 
