@@ -42,7 +42,18 @@ changelog:
       - "^test:"
 
 brews:
-  - name: wscli@{{ .Major }}
+  - name: wscli@{{.Tag}}
+    repository:
+      owner: akshaykhairmode
+      name: homebrew-tools
+    homepage: "https://github.com/akshaykhairmode/wscli"
+    description: "A command-line WebSocket client"
+    license: "GPL-3.0"
+    commit_author:
+      name: Akshay Khairmode
+      email: akshaykhairmode@gmail.com
+    commit_msg_template: "Update wscli formula to {{ .Tag }}"
+  - name: wscli
     repository:
       owner: akshaykhairmode
       name: homebrew-tools
