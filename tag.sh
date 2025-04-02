@@ -8,8 +8,14 @@ if [ -z "$tag_name" ]; then
 fi
 
 # Check if the tag already exists locally
-if git tag --list "$tag_name" > /dev/null; then
+if git tag --list | grep -q "^$tag_name$"; then
   echo "Error: Tag '$tag_name' already exists locally."
+  exit 1
+fi
+
+# Check if the tag already exists remotely
+if git ls-remote --tags origin | grep -q "refs/tags/$tag_name$"; then
+  echo "Error: Tag '$tag_name' already exists remotely."
   exit 1
 fi
 
@@ -17,12 +23,6 @@ fi
 if ! git tag -a "$tag_name" -m "Release $tag_name"; then
   echo "Error: Failed to create tag '$tag_name'."
   exit 1
-fi
-
-# Check if the tag already exists remotely
-if git ls-remote --tags origin "$tag_name" > /dev/null; then
-    echo "Error: Tag '$tag_name' already exists remotely."
-    exit 1
 fi
 
 # Push the tag to the remote repository
