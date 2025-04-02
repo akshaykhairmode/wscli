@@ -212,14 +212,14 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 		seqCounter++
 	}
 
-	//Send Load Mesasge only once when mps is sent.
-	if g.config.MessagePerSecond <= 0 {
+	//Send Load Mesasge only once when mi is 0.
+	if g.config.MessageInterval <= 0 {
 		lmFunc()
 		return
 	}
 
 	//send load
-	for range time.Tick(time.Second / time.Duration(g.config.MessagePerSecond)) {
+	for range time.Tick(g.config.MessageInterval) {
 		lmFunc()
 	}
 }

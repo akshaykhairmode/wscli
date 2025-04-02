@@ -117,17 +117,17 @@ $ wscli --slash -c ws://localhost:8080/ws
 
 ## 📊 Load Testing (Enable via `--perf`)
 
-| Flag | Description |
-|------|-------------|
-| `--tc` | Total number of connections. |
-| `--lm` | Load message to send. Can use templates defined below. File input supported. |
-| `--mps` | Messages per second (default: 1). |
-| `--am` | Authentication message. Can use templates defined below. File input supported. |
-| `--waa` | Wait time after authentication before sending load messages. |
-| `--wba` | Wait time before sending auth message to the server |
-| `--rups` | Connections ramp-up per second (default: 1). |
-| `--outfile` | Do not open the tview output and write the output to file. |
-| `--pconfig` | Take perf config from file. Pass the file path here. The format of the file is available [here](config.yaml). |
+| Flag | Description | Data Type |
+|------|-------------|-----------|
+| `--tc` | Total number of connections. | unsigned integer |
+| `--lm` | Load message to send. Can use templates defined below. File input supported. | string |
+| `--am` | Authentication message. Can use templates defined below. File input supported. | string |
+| `--mi` | Message interval. (default: 0s). If not set, then lm will be sent only once. | duration |
+| `--waa` | Wait time after authentication before sending load messages. | duration |
+| `--wba` | Wait time before sending auth message to the server | duration |
+| `--rups` | Connections ramp-up per second (default: 1). | unsigned integer |
+| `--outfile` | Do not open the tview output and write the output to file. | string |
+| `--pconfig` | Take perf config from file. Pass the file path here. The format of the file is available [here](config.yaml). This will override all other perf flags even if set. | string |
 
 **Note**: `--lm` and `--am` also support file input. Provide an absolute path to send messages from a file. The file reading will restart from the first line when EOF is reached. If file is less than 10MB then we store it in memory. "\n" is the delimeter.
 

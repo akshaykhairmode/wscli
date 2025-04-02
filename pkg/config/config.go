@@ -55,23 +55,23 @@ type TLS struct {
 }
 
 type Perf struct {
-	TotalConns           int           `yaml:"tc"`      //total connections which needs to be created.
+	TotalConns           uint          `yaml:"tc"`      //total connections which needs to be created.
 	LoadMessage          string        `yaml:"lm"`      //the load message which needs to be sent to the server.
-	MessagePerSecond     int           `yaml:"mps"`     //how many messages to be sent per second.
+	MessageInterval      time.Duration `yaml:"mi"`      //at what interval we send the messages.
 	AuthMessage          string        `yaml:"am"`      //the auth message which needs to be send as soon as connecting.
 	WaitBeforeAuth       time.Duration `yaml:"wba"`     //wait for x amount of time before sending auth message
 	WaitAfterAuth        time.Duration `yaml:"waa"`     //wait for x amount of time before starting to send load.
-	RampUpConnsPerSecond int           `yaml:"rups"`    //how many connections to add every second
+	RampUpConnsPerSecond uint          `yaml:"rups"`    //how many connections to add every second
 	LogOutFile           string        `yaml:"outfile"` //give the file path where to write the logs
 	Config               string        //the file path from where to get the perf config
 }
 
 func (p Perf) String() string {
-	return fmt.Sprintf(`Total Connections: %d, Messages Per Second: %d, Wait Before Auth: %s, Wait After Auth: %s
+	return fmt.Sprintf(`Total Connections: %d, Messages Interval: %d, Wait Before Auth: %s, Wait After Auth: %s
 	Ramp Up Connections Per Second: %d, Log Out File: %s, Auth Message: %s, Load Message: %s
 	ConfigPath : %s`,
 		p.TotalConns,
-		p.MessagePerSecond,
+		p.MessageInterval,
 		p.WaitBeforeAuth,
 		p.WaitAfterAuth,
 		p.RampUpConnsPerSecond,
@@ -124,13 +124,13 @@ func Get() *Flag {
 	//perf
 	pflag.BoolVar(&cfg.isPerf, "perf", false, "Enable load testing")
 	pflag.StringVar(&cfg.perf.Config, "pconfig", "", "Load perf config from file")
-	pflag.IntVar(&cfg.perf.TotalConns, "tc", 0, "Total number of connections to create")
+	pflag.UintVar(&cfg.perf.TotalConns, "tc", 0, "Total number of connections to create")
 	pflag.StringVar(&cfg.perf.LoadMessage, "lm", "", "Load message to send to the server")
-	pflag.IntVar(&cfg.perf.MessagePerSecond, "mps", 0, "Number of messages to send per second")
+	pflag.DurationVar(&cfg.perf.MessageInterval, "mi", 0, "the interval for sending messages.")
 	pflag.StringVar(&cfg.perf.AuthMessage, "am", "", "Authentication message to send to the server")
 	pflag.DurationVar(&cfg.perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
 	pflag.DurationVar(&cfg.perf.WaitBeforeAuth, "wba", 0, "Wait time before sending authentication to server")
-	pflag.IntVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
+	pflag.UintVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
 	pflag.StringVar(&cfg.perf.LogOutFile, "outfile", "", "Write to file instead of output on terminal")
 
 	pflag.Parse()
