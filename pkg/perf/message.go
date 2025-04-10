@@ -177,11 +177,10 @@ func getUniqueSequence(group string, start ...uint64) uint64 {
 
 	val, _ := uniqueSequenceMap.LoadOrStore(group, getUint64Counter(start...))
 	tc := val.(*atomic.Uint64)
-	defer func() {
-		tc.Add(1)
-	}()
 
-	return tc.Load()
+	newVal := tc.Add(1)
+
+	return newVal - 1
 }
 
 func getUint64Counter(start ...uint64) *atomic.Uint64 {
