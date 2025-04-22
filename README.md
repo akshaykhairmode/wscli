@@ -160,11 +160,15 @@ $ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 1
 # --mi 1s (send 1 message per second)
 ```
 
-**output**:
+**Normal Output**
+
+![normal-output](assets/wscli.png)
+
+**Perf output**:
 
 ![perf-output](assets/output.png)
 
-**Verbose output**:
+**Perf Verbose output**:
  
 ![perf-output-verbose](assets/verbose-output.png)
 
