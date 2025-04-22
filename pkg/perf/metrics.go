@@ -26,7 +26,7 @@ type Metrics struct {
 
 	totalConns int64
 
-	errors errMsg
+	errors *errMsg
 	output Printer
 
 	startTime    time.Time
@@ -34,7 +34,7 @@ type Metrics struct {
 }
 
 type Printer interface {
-	UpdateTableAndLogs(data []string, errors errMsg)
+	UpdateTableAndLogs(data []string, errors *errMsg)
 	Start()
 	Stop()
 }
@@ -56,11 +56,10 @@ func (em *errMsg) Add(msg string) {
 	em.data[msg]++
 }
 
-func (em *errMsg) Get() (map[string]int, []string) {
+func (em *errMsg) ForEach(f func(data map[string]int, order []string)) {
 	em.mux.RLock()
 	defer em.mux.RUnlock()
-
-	return em.data, em.order
+	f(em.data, em.order)
 }
 
 func NewMetrics(totalConns int64, out string) *Metrics {
@@ -84,7 +83,7 @@ func NewMetrics(totalConns int64, out string) *Metrics {
 		connectTime:           metrics.NewTimer(),
 		messageTime:           metrics.NewTimer(),
 		totalConns:            totalConns,
-		errors: errMsg{
+		errors: &errMsg{
 			data: make(map[string]int),
 			mux:  &sync.RWMutex{},
 		},
@@ -106,7 +105,27 @@ func NewMetrics(totalConns int64, out string) *Metrics {
 	return m
 }
 
-var LogBuffer = bytes.NewBuffer(nil)
+type customBufferedLogger struct {
+	buf *bytes.Buffer
+	mux *sync.RWMutex
+}
+
+func (l *customBufferedLogger) Write(p []byte) (n int, err error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+	return l.buf.Write(p)
+}
+
+func (l *customBufferedLogger) Read(buf []byte) (int, error) {
+	l.mux.RLock()
+	defer l.mux.RUnlock()
+	return l.buf.Read(buf)
+}
+
+var LogBuffer = &customBufferedLogger{
+	buf: &bytes.Buffer{},
+	mux: &sync.RWMutex{},
+}
 
 var re = regexp.MustCompile(`^\d{2}:\d{2}:\d{2}.\d{3} `)
 
@@ -140,7 +159,7 @@ func (m *Metrics) printMetrics() {
 	go func() {
 		m.output.UpdateTableAndLogs(m.getTable(headings), m.errors)
 
-		for range time.Tick(config.Flags.GetPrintInterval()) {
+		for range time.Tick(config.Flags.PrintOutputInterval) {
 			m.output.UpdateTableAndLogs(m.getTable(headings), m.errors)
 		}
 	}()

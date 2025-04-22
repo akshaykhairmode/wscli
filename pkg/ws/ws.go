@@ -39,17 +39,17 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 	closeFunc := func() {}
 	rFunc := ReaderFunc(func(*websocket.Conn) {})
 
-	if config.Flags.GetConnectURL() == "" {
+	if config.Flags.ConnectURL == "" {
 		return nil, closeFunc, rFunc, fmt.Errorf("connect url is empty")
 	}
 
-	u, err := url.Parse(config.Flags.GetConnectURL())
+	u, err := url.Parse(config.Flags.ConnectURL)
 	if err != nil {
 		return nil, closeFunc, rFunc, fmt.Errorf("error while passing the url : %w", err)
 	}
 
 	headers := http.Header{}
-	for _, h := range config.Flags.GetHeaders() {
+	for _, h := range config.Flags.Headers {
 		headSpl := strings.Split(h, ":")
 		if len(headSpl) != 2 {
 			return nil, closeFunc, rFunc, fmt.Errorf("invalid header : %s", h)
@@ -57,21 +57,21 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 		headers.Set(headSpl[0], headSpl[1])
 	}
 
-	if config.Flags.GetOrigin() != "" {
-		headers.Set("Origin", config.Flags.GetOrigin())
+	if config.Flags.Origin != "" {
+		headers.Set("Origin", config.Flags.Origin)
 	}
 
-	if config.Flags.GetAuth() != "" {
-		headers.Set("Authorization", BasicAuth(config.Flags.GetAuth()))
+	if config.Flags.Auth != "" {
+		headers.Set("Authorization", BasicAuth(config.Flags.Auth))
 	}
 
 	dialer := websocket.Dialer{
-		Subprotocols:    config.Flags.GetSubProtocol(),
+		Subprotocols:    config.Flags.SubProtocol,
 		TLSClientConfig: GetTLSConfig(),
 	}
 
-	if config.Flags.GetProxy() != "" {
-		proxyURLParsed, err := url.Parse(config.Flags.GetProxy())
+	if config.Flags.Proxy != "" {
+		proxyURLParsed, err := url.Parse(config.Flags.Proxy)
 		if err != nil {
 			return nil, closeFunc, rFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
 		}
@@ -83,7 +83,7 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 		return nil, closeFunc, rFunc, fmt.Errorf("dial error : %w", err)
 	}
 
-	if config.Flags.ShowResponseHeaders() {
+	if config.Flags.ShouldShowResponseHeaders {
 		for k, v := range resp.Header {
 			log.Println(k, v)
 		}
@@ -101,7 +101,7 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 }
 
 func PingWorker(c *websocket.Conn) {
-	for range time.Tick(config.Flags.GetPingInterval()) {
+	for range time.Tick(config.Flags.PingInterval) {
 		err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
 		if err != nil {
 			if err.Error() == "websocket: close sent" {
@@ -123,7 +123,7 @@ func readMessages(conn *websocket.Conn) {
 
 	fn := func(what string) func(appData string) error {
 		return func(appData string) error {
-			if config.Flags.ShowPingPong() {
+			if config.Flags.ShowPingPong {
 				log.Println(BlueColor("received %s (data: %s)", what, appData))
 			}
 			return nil
@@ -153,7 +153,7 @@ func readMessages(conn *websocket.Conn) {
 		case websocket.TextMessage:
 			log.Println(formatMessage(message))
 		case websocket.BinaryMessage:
-			if config.Flags.IsGzipResponse() {
+			if config.Flags.IsGzipResponse {
 				gzBytes, err := unzipGzipBytes(message)
 				if err != nil {
 					logger.Err(err).Msg("error while unzipping bytes")
@@ -190,7 +190,7 @@ func unzipGzipBytes(gzipBytes []byte) (string, error) {
 
 func formatMessage(message []byte) string {
 
-	if !config.Flags.IsJSONPrettyPrint() {
+	if !config.Flags.IsJSONPrettyPrint {
 		return GreenColor("« %s", message)
 	}
 
@@ -216,7 +216,7 @@ func WriteToServer(conn *websocket.Conn, mt int, message []byte) {
 		return
 	}
 
-	if !config.Flags.IsBinary() {
+	if !config.Flags.IsBinary {
 		if err := conn.WriteMessage(mt, message); err != nil {
 			logger.Err(err).Msg("write error")
 		}
@@ -236,17 +236,15 @@ func WriteToServer(conn *websocket.Conn, mt int, message []byte) {
 
 func GetTLSConfig() *tls.Config {
 
-	if config.Flags.SkipCertificateCheck() {
+	if config.Flags.NoCertificateCheck {
 		return &tls.Config{
 			InsecureSkipVerify: true,
 		}
 	}
 
-	tlsCfg := config.Flags.GetTLS()
+	caCertPool := processCACert(config.Flags.TLS.CA)
 
-	caCertPool := processCACert(tlsCfg.CA)
-
-	certificates, err := processCert(tlsCfg.Cert, tlsCfg.Key, tlsCfg.Passphrase)
+	certificates, err := processCert(config.Flags.TLS.Cert, config.Flags.TLS.Key, config.Flags.TLS.Passphrase)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while processing client certificate")
 		return nil

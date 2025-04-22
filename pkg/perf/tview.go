@@ -112,20 +112,20 @@ func (tv *Tview) Stop() {
 	tv.app.Stop()
 }
 
-func (tv *Tview) UpdateTableAndLogs(data []string, errors errMsg) {
+func (tv *Tview) UpdateTableAndLogs(data []string, errors *errMsg) {
 
 	tv.app.QueueUpdateDraw(func() {
 		updateTable(tv.table, data)
-
-		errors, order := errors.Get()
 		builder := strings.Builder{}
-		for _, v := range order {
-			if errors[v] > 1 {
-				builder.WriteString(fmt.Sprintf("%s [grey](%d)[white]\n", v, errors[v]))
-			} else {
-				builder.WriteString(fmt.Sprintf("%s\n", v))
+		errors.ForEach(func(data map[string]int, order []string) {
+			for _, v := range order {
+				if data[v] > 1 {
+					builder.WriteString(fmt.Sprintf("%s [grey](%d)[white]\n", v, data[v]))
+				} else {
+					builder.WriteString(fmt.Sprintf("%s\n", v))
+				}
 			}
-		}
+		})
 
 		tv.logs.SetText(builder.String())
 

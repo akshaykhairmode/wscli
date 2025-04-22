@@ -22,47 +22,45 @@ type Generator struct {
 	authMessage messageGetter
 }
 
-func New(pconfig config.Perf) (*Generator, error) {
+func New() (*Generator, error) {
 
 	//If config file is passed, overwrite perf config.
-	if pconfig.Config != "" {
-		cfgBytes, err := os.ReadFile(pconfig.Config)
+	if config.Flags.Perf.ConfigPath != "" {
+		cfgBytes, err := os.ReadFile(config.Flags.Perf.ConfigPath)
 		if err != nil {
 			return nil, fmt.Errorf("error while reading the config file : %w", err)
 		}
 
-		if err := yaml.Unmarshal(cfgBytes, &pconfig); err != nil {
+		if err := yaml.Unmarshal(cfgBytes, &config.Flags.Perf); err != nil {
 			return nil, fmt.Errorf("error while unmarshalling the config file : %w", err)
 		}
-
-		config.Flags.SetPerfConfig(pconfig)
 	}
 
-	if pconfig.LogOutFile != "" {
+	if config.Flags.Perf.LogOutFile != "" {
 		logger.Init(LogBuffer, fileFormatLevelFunc)
 	} else {
 		logger.Init(LogBuffer, nil)
 	}
 
-	if pconfig.TotalConns <= 0 {
+	if config.Flags.Perf.TotalConns <= 0 {
 		return nil, fmt.Errorf("total number of connections are required")
 	}
 
-	lm, err := NewMessage(pconfig.LoadMessage)
+	lm, err := NewMessage(config.Flags.Perf.LoadMessage)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the load message : %w", err)
 	}
 
-	am, err := NewMessage(pconfig.AuthMessage)
+	am, err := NewMessage(config.Flags.Perf.AuthMessage)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the auth message : %w", err)
 	}
 
-	logger.Info().Msgf("Config Loaded : %s", pconfig)
+	logger.Info().Msgf("Config Loaded : %s", config.Flags.Perf)
 
 	return &Generator{
-		config:      pconfig,
-		metric:      NewMetrics(int64(pconfig.TotalConns), pconfig.LogOutFile),
+		config:      config.Flags.Perf,
+		metric:      NewMetrics(int64(config.Flags.Perf.TotalConns), config.Flags.Perf.LogOutFile),
 		loadMessage: lm,
 		authMessage: am,
 	}, nil

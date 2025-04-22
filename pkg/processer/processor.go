@@ -33,15 +33,15 @@ func New(conn *websocket.Conn, term *terminal.Term) *Interactive {
 }
 
 func ProcessAsCmd(conn *websocket.Conn) {
-	for _, cmd := range config.Flags.GetExecute() {
+	for _, cmd := range config.Flags.Execute {
 		ws.WriteToServer(conn, websocket.TextMessage, []byte(cmd))
 	}
 
 	defer func() {
-		<-time.After(config.Flags.GetWait())
+		<-time.After(config.Flags.Wait)
 	}()
 
-	if config.Flags.IsStdin() {
+	if config.Flags.IsSTDin {
 		go catchSignals(conn, nil)
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
@@ -52,11 +52,11 @@ func ProcessAsCmd(conn *websocket.Conn) {
 
 func (i *Interactive) Process() {
 
-	for _, cmd := range config.Flags.GetExecute() {
+	for _, cmd := range config.Flags.Execute {
 		ws.WriteToServer(i.conn, websocket.TextMessage, []byte(cmd))
 	}
 
-	i.term.AppendPrompt(fmt.Sprintf("(%s)»", truncateString(config.Flags.GetConnectURL(), 25)))
+	i.term.AppendPrompt(fmt.Sprintf("(%s)»", truncateString(config.Flags.ConnectURL, 25)))
 
 	i.term.OnMessage(func(line string) {
 		switch {
@@ -113,7 +113,7 @@ func sendBinaryFile(conn *websocket.Conn, line string) {
 }
 
 func shouldProcessCommand(line, prefix string) bool {
-	if config.Flags.IsSlash() && strings.HasPrefix(line, prefix) {
+	if config.Flags.IsSlash && strings.HasPrefix(line, prefix) {
 		return true
 	}
 

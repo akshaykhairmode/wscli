@@ -21,7 +21,7 @@ type CloseFunc func() error
 
 func New() (*Term, CloseFunc, *sync.WaitGroup) {
 
-	if config.Flags.IsStdin() {
+	if config.Flags.IsSTDin {
 		return &Term{}, func() error { return nil }, &sync.WaitGroup{}
 	}
 
@@ -30,7 +30,7 @@ func New() (*Term, CloseFunc, *sync.WaitGroup) {
 		logger.Fatal().Err(err).Msg("error while creating readline object")
 	}
 
-	if !config.Flags.IsStdin() {
+	if !config.Flags.IsSTDin {
 		rl.CaptureExitSignal()
 	}
 

@@ -41,7 +41,7 @@ func Init(out io.Writer, formatLevelFunc func(i any) string) {
 
 	l := zerolog.New(consoleWriter).With().Logger()
 
-	if config.Flags.IsVerbose() {
+	if config.Flags.Verbose {
 		l = l.Level(zerolog.DebugLevel)
 	} else {
 		l = l.Level(zerolog.InfoLevel)

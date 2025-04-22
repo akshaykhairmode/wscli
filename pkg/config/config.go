@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/fatih/color"
@@ -12,39 +11,37 @@ import (
 )
 
 type Flag struct {
-	connectURL          string
-	auth                string
-	headers             []string
-	origin              string
-	execute             []string
-	wait                time.Duration
-	printOutputInterval time.Duration
-	pingInterval        time.Duration
-	subProtocol         []string
-	proxy               string
+	ConnectURL          string
+	Auth                string
+	Headers             []string
+	Origin              string
+	Execute             []string
+	Wait                time.Duration
+	PrintOutputInterval time.Duration
+	PingInterval        time.Duration
+	SubProtocol         []string
+	Proxy               string
 
-	perf Perf
+	Perf Perf
 
-	showPingPong              bool
-	isSlash                   bool
-	noCertificateCheck        bool
-	version                   bool
-	verbose                   bool
-	noColor                   bool
-	shouldShowResponseHeaders bool
-	isJSONPrettyPrint         bool
-	isBinary                  bool
-	isGzipResponse            bool
-	isPerf                    bool
+	ShowPingPong              bool
+	IsSlash                   bool
+	NoCertificateCheck        bool
+	Version                   bool
+	Verbose                   bool
+	NoColor                   bool
+	ShouldShowResponseHeaders bool
+	IsJSONPrettyPrint         bool
+	IsBinary                  bool
+	IsGzipResponse            bool
+	IsPerf                    bool
 
-	isStdOut bool
+	IsStdOut bool
 
-	help    bool
-	isSTDin bool // read from stdin, cannot send messages to the server other than what is in the stdin
+	Help    bool
+	IsSTDin bool // read from stdin, cannot send messages to the server other than what is in the stdin
 
-	tls TLS
-
-	mux sync.RWMutex
+	TLS TLS
 }
 
 type TLS struct {
@@ -63,11 +60,11 @@ type Perf struct {
 	WaitAfterAuth        time.Duration `yaml:"waa"`     //wait for x amount of time before starting to send load.
 	RampUpConnsPerSecond uint          `yaml:"rups"`    //how many connections to add every second
 	LogOutFile           string        `yaml:"outfile"` //give the file path where to write the logs
-	Config               string        //the file path from where to get the perf config
+	ConfigPath           string        //the file path from where to get the perf config
 }
 
 func (p Perf) String() string {
-	return fmt.Sprintf(`Total Connections: %d, Messages Interval: %d, Wait Before Auth: %s, Wait After Auth: %s
+	return fmt.Sprintf(`Total Connections: %d, Messages Interval: %s, Wait Before Auth: %s, Wait After Auth: %s
 	Ramp Up Connections Per Second: %d, Log Out File: %s, Auth Message: %s, Load Message: %s
 	ConfigPath : %s`,
 		p.TotalConns,
@@ -78,73 +75,71 @@ func (p Perf) String() string {
 		p.LogOutFile,
 		p.AuthMessage,
 		p.LoadMessage,
-		p.Config,
+		p.ConfigPath,
 	)
 }
 
 var Flags *Flag
 
 func init() {
-	Flags = Get()
+	Flags = get()
 }
 
-func Get() *Flag {
-	cfg := Flag{
-		mux: sync.RWMutex{},
-	}
+func get() *Flag {
+	cfg := Flag{}
 
-	pflag.BoolVarP(&cfg.help, "help", "h", false, "	Display help information.")
-	pflag.BoolVar(&cfg.isSlash, "slash", false, "Enable slash commands (Experimental).")
-	pflag.BoolVarP(&cfg.noCertificateCheck, "no-check", "n", false, "Disable TLS certificate verification.")
-	pflag.BoolVarP(&cfg.showPingPong, "show-ping-pong", "P", false, "Show ping/pong messages.")
-	pflag.BoolVarP(&cfg.version, "version", "V", false, "Display version information.")
-	pflag.BoolVarP(&cfg.verbose, "verbose", "v", false, "Enable debug logging.")
-	pflag.BoolVar(&cfg.noColor, "no-color", false, "Disable colored output.")
-	pflag.BoolVarP(&cfg.shouldShowResponseHeaders, "response", "r", false, "Display HTTP response headers from the server.")
-	pflag.BoolVar(&cfg.isJSONPrettyPrint, "jspp", false, "Enable JSON pretty printing for responses.")
-	pflag.BoolVarP(&cfg.isBinary, "binary", "b", false, "Send hex encoded data to server")
-	pflag.BoolVar(&cfg.isGzipResponse, "gzipr", false, "Enable gzip decoding if server messages are gzip-encoded. (Note: Server must send messages as binary.)")
-	pflag.BoolVar(&cfg.isStdOut, "std-out", false, "print the received messages in standard output, default is standard error")
+	pflag.BoolVarP(&cfg.Help, "help", "h", false, "	Display help information.")
+	pflag.BoolVar(&cfg.IsSlash, "slash", false, "Enable slash commands (Experimental).")
+	pflag.BoolVarP(&cfg.NoCertificateCheck, "no-check", "n", false, "Disable TLS certificate verification.")
+	pflag.BoolVarP(&cfg.ShowPingPong, "show-ping-pong", "P", false, "Show ping/pong messages.")
+	pflag.BoolVarP(&cfg.Version, "version", "V", false, "Display version information.")
+	pflag.BoolVarP(&cfg.Verbose, "verbose", "v", false, "Enable debug logging.")
+	pflag.BoolVar(&cfg.NoColor, "no-color", false, "Disable colored output.")
+	pflag.BoolVarP(&cfg.ShouldShowResponseHeaders, "response", "r", false, "Display HTTP response headers from the server.")
+	pflag.BoolVar(&cfg.IsJSONPrettyPrint, "jspp", false, "Enable JSON pretty printing for responses.")
+	pflag.BoolVarP(&cfg.IsBinary, "binary", "b", false, "Send hex encoded data to server")
+	pflag.BoolVar(&cfg.IsGzipResponse, "gzipr", false, "Enable gzip decoding if server messages are gzip-encoded. (Note: Server must send messages as binary.)")
+	pflag.BoolVar(&cfg.IsStdOut, "std-out", false, "print the received messages in standard output, default is standard error")
 
-	pflag.StringVarP(&cfg.connectURL, "connect", "c", "", "WebSocket connection URL.")
-	pflag.StringVar(&cfg.proxy, "proxy", "", "Use a proxy URL.")
-	pflag.StringVar(&cfg.auth, "auth", "", "HTTP Basic Authentication credentials (e.g., username:password).")
-	pflag.StringSliceVarP(&cfg.headers, "header", "H", []string{}, "Custom headers (key:value, can be used multiple times).")
-	pflag.StringVarP(&cfg.origin, "origin", "o", "", "Specify origin for the WebSocket connection (optional).")
-	pflag.StringSliceVarP(&cfg.execute, "execute", "x", []string{}, "Execute a command after connecting (use multiple times for multiple commands).")
-	pflag.DurationVarP(&cfg.wait, "wait", "w", 0, "Wait time after command execution (1s, 1m, 1h).")
-	pflag.StringSliceVarP(&cfg.subProtocol, "sub-protocol", "s", []string{}, "Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times).")
-	pflag.DurationVar(&cfg.printOutputInterval, "print-interval", time.Second, "how often to print the status on the terminal")
-	pflag.DurationVar(&cfg.pingInterval, "ping-interval", 30*time.Second, "how often to ping the connections which are created")
+	pflag.StringVarP(&cfg.ConnectURL, "connect", "c", "", "WebSocket connection URL.")
+	pflag.StringVar(&cfg.Proxy, "proxy", "", "Use a proxy URL.")
+	pflag.StringVar(&cfg.Auth, "auth", "", "HTTP Basic Authentication credentials (e.g., username:password).")
+	pflag.StringSliceVarP(&cfg.Headers, "header", "H", []string{}, "Custom headers (key:value, can be used multiple times).")
+	pflag.StringVarP(&cfg.Origin, "origin", "o", "", "Specify origin for the WebSocket connection (optional).")
+	pflag.StringSliceVarP(&cfg.Execute, "execute", "x", []string{}, "Execute a command after connecting (use multiple times for multiple commands).")
+	pflag.DurationVarP(&cfg.Wait, "wait", "w", 0, "Wait time after command execution (1s, 1m, 1h).")
+	pflag.StringSliceVarP(&cfg.SubProtocol, "sub-protocol", "s", []string{}, "Specify a sub-protocol for the WebSocket connection (optional, can be used multiple times).")
+	pflag.DurationVar(&cfg.PrintOutputInterval, "print-interval", time.Second, "how often to print the status on the terminal")
+	pflag.DurationVar(&cfg.PingInterval, "ping-interval", 30*time.Second, "how often to ping the connections which are created")
 
-	pflag.StringVar(&cfg.tls.CA, "ca", "", "Path to the CA certificate file (optional).")
-	pflag.StringVar(&cfg.tls.Cert, "cert", "", "Path to the client certificate file (optional).")
-	pflag.StringVar(&cfg.tls.Key, "key", "", "Path to the certificate key file (optional).")
+	pflag.StringVar(&cfg.TLS.CA, "ca", "", "Path to the CA certificate file (optional).")
+	pflag.StringVar(&cfg.TLS.Cert, "cert", "", "Path to the client certificate file (optional).")
+	pflag.StringVar(&cfg.TLS.Key, "key", "", "Path to the certificate key file (optional).")
 
 	//perf
-	pflag.BoolVar(&cfg.isPerf, "perf", false, "Enable load testing")
-	pflag.StringVar(&cfg.perf.Config, "pconfig", "", "Load perf config from file")
-	pflag.UintVar(&cfg.perf.TotalConns, "tc", 0, "Total number of connections to create")
-	pflag.StringVar(&cfg.perf.LoadMessage, "lm", "", "Load message to send to the server")
-	pflag.DurationVar(&cfg.perf.MessageInterval, "mi", 0, "the interval for sending messages.")
-	pflag.StringVar(&cfg.perf.AuthMessage, "am", "", "Authentication message to send to the server")
-	pflag.DurationVar(&cfg.perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
-	pflag.DurationVar(&cfg.perf.WaitBeforeAuth, "wba", 0, "Wait time before sending authentication to server")
-	pflag.UintVar(&cfg.perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
-	pflag.StringVar(&cfg.perf.LogOutFile, "outfile", "", "Write to file instead of output on terminal")
+	pflag.BoolVar(&cfg.IsPerf, "perf", false, "Enable load testing")
+	pflag.StringVar(&cfg.Perf.ConfigPath, "pconfig", "", "Load perf config from file")
+	pflag.UintVar(&cfg.Perf.TotalConns, "tc", 0, "Total number of connections to create")
+	pflag.StringVar(&cfg.Perf.LoadMessage, "lm", "", "Load message to send to the server")
+	pflag.DurationVar(&cfg.Perf.MessageInterval, "mi", 0, "the interval for sending messages.")
+	pflag.StringVar(&cfg.Perf.AuthMessage, "am", "", "Authentication message to send to the server")
+	pflag.DurationVar(&cfg.Perf.WaitAfterAuth, "waa", 0, "Wait time after authentication before sending load messages to server")
+	pflag.DurationVar(&cfg.Perf.WaitBeforeAuth, "wba", 0, "Wait time before sending authentication to server")
+	pflag.UintVar(&cfg.Perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
+	pflag.StringVar(&cfg.Perf.LogOutFile, "outfile", "", "Write to file instead of output on terminal")
 
 	pflag.Parse()
 
-	if cfg.help {
+	if cfg.Help {
 		pflag.Usage()
 		os.Exit(0)
 	}
 
-	if cfg.noColor {
+	if cfg.NoColor {
 		color.NoColor = true
 	}
 
-	cfg.isSTDin = isInputFromPipe()
+	cfg.IsSTDin = isInputFromPipe()
 
 	return &cfg
 }
@@ -173,31 +168,42 @@ func (c *Flag) String() string {
 	var sb strings.Builder
 
 	sb.WriteString("Config:\n")
-	sb.WriteString(fmt.Sprintf("  connectURL: %s\n", c.connectURL))
-	sb.WriteString(fmt.Sprintf("  auth: %s\n", c.auth))
-	sb.WriteString(fmt.Sprintf("  headers: %v\n", c.headers))
-	sb.WriteString(fmt.Sprintf("  origin: %s\n", c.origin))
-	sb.WriteString(fmt.Sprintf("  execute: %v\n", c.execute))
-	sb.WriteString(fmt.Sprintf("  wait: %s\n", c.wait))
-	sb.WriteString(fmt.Sprintf("  subProtocol: %v\n", c.subProtocol))
-	sb.WriteString(fmt.Sprintf("  proxy: %s\n", c.proxy))
+	sb.WriteString(fmt.Sprintf("  ConnectURL: %s\n", c.ConnectURL))
+	sb.WriteString(fmt.Sprintf("  Auth: %s\n", c.Auth))
+	sb.WriteString(fmt.Sprintf("  Headers: %v\n", c.Headers))
+	sb.WriteString(fmt.Sprintf("  Origin: %s\n", c.Origin))
+	sb.WriteString(fmt.Sprintf("  Execute: %v\n", c.Execute))
+	sb.WriteString(fmt.Sprintf("  Wait: %s\n", c.Wait))
+	sb.WriteString(fmt.Sprintf("  PrintOutputInterval: %s\n", c.PrintOutputInterval)) // Added
+	sb.WriteString(fmt.Sprintf("  PingInterval: %s\n", c.PingInterval))               // Added
+	sb.WriteString(fmt.Sprintf("  SubProtocol: %v\n", c.SubProtocol))
+	sb.WriteString(fmt.Sprintf("  Proxy: %s\n", c.Proxy))
 
-	sb.WriteString(fmt.Sprintf("  showPingPong: %t\n", c.showPingPong))
-	sb.WriteString(fmt.Sprintf("  isSlash: %t\n", c.isSlash))
-	sb.WriteString(fmt.Sprintf("  noCertificateCheck: %t\n", c.noCertificateCheck))
-	sb.WriteString(fmt.Sprintf("  version: %t\n", c.version))
-	sb.WriteString(fmt.Sprintf("  verbose: %t\n", c.verbose))
-	sb.WriteString(fmt.Sprintf("  noColor: %t\n", c.noColor))
-	sb.WriteString(fmt.Sprintf("  shouldShowResponseHeaders: %t\n", c.shouldShowResponseHeaders))
-	sb.WriteString(fmt.Sprintf("  isJSONPrettyPrint: %t\n", c.isJSONPrettyPrint))
-	sb.WriteString(fmt.Sprintf("  isBinary: %t\n", c.isBinary))
-	sb.WriteString(fmt.Sprintf("  isGzipResponse: %t\n", c.isGzipResponse))
+	sb.WriteString(fmt.Sprintf("  ShowPingPong: %t\n", c.ShowPingPong))
+	sb.WriteString(fmt.Sprintf("  IsSlash: %t\n", c.IsSlash))
+	sb.WriteString(fmt.Sprintf("  NoCertificateCheck: %t\n", c.NoCertificateCheck))
+	sb.WriteString(fmt.Sprintf("  Version: %t\n", c.Version))
+	sb.WriteString(fmt.Sprintf("  Verbose: %t\n", c.Verbose))
+	sb.WriteString(fmt.Sprintf("  NoColor: %t\n", c.NoColor))
+	sb.WriteString(fmt.Sprintf("  ShouldShowResponseHeaders: %t\n", c.ShouldShowResponseHeaders))
+	sb.WriteString(fmt.Sprintf("  IsJSONPrettyPrint: %t\n", c.IsJSONPrettyPrint))
+	sb.WriteString(fmt.Sprintf("  IsBinary: %t\n", c.IsBinary))
+	sb.WriteString(fmt.Sprintf("  IsGzipResponse: %t\n", c.IsGzipResponse))
+	sb.WriteString(fmt.Sprintf("  IsPerf: %t\n", c.IsPerf))     // Added
+	sb.WriteString(fmt.Sprintf("  IsStdOut: %t\n", c.IsStdOut)) // Added
 
-	sb.WriteString(fmt.Sprintf("  help: %t\n", c.help))
-	sb.WriteString(fmt.Sprintf("  isSTDin: %t\n", c.isSTDin))
+	sb.WriteString(fmt.Sprintf("  Help: %t\n", c.Help))
+	sb.WriteString(fmt.Sprintf("  IsSTDin: %t\n", c.IsSTDin))
 
-	// You may want to customize how TLS is printed
-	sb.WriteString(fmt.Sprintf("  tls: %+v\n", c.tls))
+	sb.WriteString(fmt.Sprintf("  TLS: %+v\n", c.TLS))
+	if c.IsPerf { // Added Perf details conditionally
+		sb.WriteString("  Perf Config:\n")
+		// Indent the Perf string output for better readability
+		perfLines := strings.Split(c.Perf.String(), "\n")
+		for _, line := range perfLines {
+			sb.WriteString(fmt.Sprintf("    %s\n", strings.TrimSpace(line)))
+		}
+	}
 
 	return sb.String()
 }

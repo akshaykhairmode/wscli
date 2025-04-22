@@ -35,7 +35,7 @@ func getDefaultConfig() *readline.Config {
 }
 
 func getPrompt(str string) string {
-	if config.Flags.IsNoColor() {
+	if config.Flags.NoColor {
 		return str
 	}
 

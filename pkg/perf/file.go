@@ -38,7 +38,7 @@ func (fo *FileOutput) tWrite(data string) {
 	}
 }
 
-func (fo *FileOutput) UpdateTableAndLogs(data []string, errors errMsg) {
+func (fo *FileOutput) UpdateTableAndLogs(data []string, errors *errMsg) {
 
 	//Stats
 	for _, heading := range headings {
@@ -62,14 +62,15 @@ func (fo *FileOutput) UpdateTableAndLogs(data []string, errors errMsg) {
 
 	now := time.Now().Format(timeFormat)
 
-	errs, order := errors.Get()
-	for _, v := range order {
-		if errs[v] > 1 {
-			fmt.Fprintf(fo.w, "%s %s (%d)\n", now, v, errs[v])
-		} else {
-			fmt.Fprintf(fo.w, "%s %s\n", now, v)
+	errors.ForEach(func(data map[string]int, order []string) {
+		for _, v := range order {
+			if data[v] > 1 {
+				fmt.Fprintf(fo.w, "%s %s (%d)\n", now, v, data[v])
+			} else {
+				fmt.Fprintf(fo.w, "%s %s\n", now, v)
+			}
 		}
-	}
+	})
 
 	fmt.Fprintln(fo.w, "----------------------------------------------------------------------------------")
 }

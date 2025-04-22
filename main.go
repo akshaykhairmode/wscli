@@ -19,25 +19,25 @@ var CLIVersion string
 func main() {
 
 	log.SetOutput(os.Stderr)
-	if config.Flags.IsStdOut() {
+	if config.Flags.IsStdOut {
 		log.SetOutput(os.Stdout)
 	}
 	log.SetFlags(0)
 
 	logger.Init(os.Stdout, nil)
 
-	if config.Flags.IsShowVersion() {
+	if config.Flags.Version {
 		fmt.Printf("CLI Version : %s\n", CLIVersion)
 		return
 	}
 
-	if config.Flags.IsPerf() {
-		gen, err := perf.New(config.Flags.GetPerfConfig())
+	if config.Flags.IsPerf {
+		gen, err := perf.New()
 		if err != nil {
 			logger.Fatal().Err(err).Msg("error while creating perf instance")
 		}
 
-		gen.Run(config.Flags.GetPerfOutfile() == "")
+		gen.Run(config.Flags.Perf.LogOutFile == "")
 		return
 	}
 
