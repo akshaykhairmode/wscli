@@ -3,6 +3,7 @@ package ws
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
@@ -43,7 +44,9 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 		return nil, closeFunc, rFunc, fmt.Errorf("connect url is empty")
 	}
 
-	u, err := url.Parse(config.Flags.ConnectURL)
+	connectURL := strings.Replace(config.Flags.ConnectURL, "%", "%25", 1)
+
+	u, err := url.Parse(connectURL)
 	if err != nil {
 		return nil, closeFunc, rFunc, fmt.Errorf("error while passing the url : %w", err)
 	}
@@ -76,6 +79,37 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 			return nil, closeFunc, rFunc, fmt.Errorf("error while parsing the proxy url : %w", err)
 		}
 		dialer.Proxy = http.ProxyURL(proxyURLParsed)
+	}
+
+	if config.Flags.BindAddress != "" || config.Flags.IPVersion != "" {
+		network := "tcp"
+		switch config.Flags.IPVersion {
+		case "4":
+			network = "tcp4"
+		case "6":
+			network = "tcp6"
+		case "":
+		default:
+			return nil, closeFunc, rFunc, fmt.Errorf("invalid ip-version: %s. Use 4 or 6", config.Flags.IPVersion)
+		}
+
+		netDialer := &net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}
+
+		if config.Flags.BindAddress != "" {
+			addrWithPort := net.JoinHostPort(config.Flags.BindAddress, "0")
+			localAddr, err := net.ResolveTCPAddr(network, addrWithPort)
+			if err != nil {
+				return nil, closeFunc, rFunc, fmt.Errorf("error resolving bind address: %w", err)
+			}
+			netDialer.LocalAddr = localAddr
+		}
+
+		dialer.NetDialContext = func(ctx context.Context, _, addr string) (net.Conn, error) {
+			return netDialer.DialContext(ctx, network, addr)
+		}
 	}
 
 	c, resp, err := dialer.Dial(u.String(), headers)

@@ -33,8 +33,7 @@ func newUpgrader() *websocket.Upgrader {
 	})
 
 	u.OnOpen(func(c *websocket.Conn) {
-		// echo
-		// fmt.Println("OnOpen:", c.RemoteAddr().String())
+		fmt.Println("OnOpen:", c.RemoteAddr().String())
 
 		// if rand.IntN(10) > 5 {
 		// 	go func() {
@@ -94,7 +93,7 @@ func main() {
 	mux.HandleFunc("/ws", onWebsocket)
 	engine := nbhttp.NewEngine(nbhttp.Config{
 		Network:                 "tcp",
-		Addrs:                   []string{"localhost:8080"},
+		Addrs:                   []string{":8080"},
 		MaxLoad:                 1000000,
 		ReleaseWebsocketPayload: true,
 		Handler:                 mux,

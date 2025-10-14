@@ -12,6 +12,8 @@ import (
 
 type Flag struct {
 	ConnectURL          string
+	BindAddress         string
+	IPVersion           string
 	Auth                string
 	Headers             []string
 	Origin              string
@@ -102,6 +104,8 @@ func get() *Flag {
 	pflag.BoolVar(&cfg.IsStdOut, "std-out", false, "print the received messages in standard output, default is standard error")
 
 	pflag.StringVarP(&cfg.ConnectURL, "connect", "c", "", "WebSocket connection URL.")
+	pflag.StringVar(&cfg.BindAddress, "bind-address", "", "Bind address for outgoing connection (e.g., 192.168.1.100).")
+	pflag.StringVar(&cfg.IPVersion, "ip-version", "", "IP version to use for outgoing connection (4 or 6).")
 	pflag.StringVar(&cfg.Proxy, "proxy", "", "Use a proxy URL.")
 	pflag.StringVar(&cfg.Auth, "auth", "", "HTTP Basic Authentication credentials (e.g., username:password).")
 	pflag.StringSliceVarP(&cfg.Headers, "header", "H", []string{}, "Custom headers (key:value, can be used multiple times).")
@@ -169,13 +173,15 @@ func (c *Flag) String() string {
 
 	sb.WriteString("Config:\n")
 	sb.WriteString(fmt.Sprintf("  ConnectURL: %s\n", c.ConnectURL))
+	sb.WriteString(fmt.Sprintf("  BindAddress: %s\n", c.BindAddress))
+	sb.WriteString(fmt.Sprintf("  IPVersion: %s\n", c.IPVersion))
 	sb.WriteString(fmt.Sprintf("  Auth: %s\n", c.Auth))
 	sb.WriteString(fmt.Sprintf("  Headers: %v\n", c.Headers))
 	sb.WriteString(fmt.Sprintf("  Origin: %s\n", c.Origin))
 	sb.WriteString(fmt.Sprintf("  Execute: %v\n", c.Execute))
 	sb.WriteString(fmt.Sprintf("  Wait: %s\n", c.Wait))
-	sb.WriteString(fmt.Sprintf("  PrintOutputInterval: %s\n", c.PrintOutputInterval)) // Added
-	sb.WriteString(fmt.Sprintf("  PingInterval: %s\n", c.PingInterval))               // Added
+	sb.WriteString(fmt.Sprintf("  PrintOutputInterval: %s\n", c.PrintOutputInterval))
+	sb.WriteString(fmt.Sprintf("  PingInterval: %s\n", c.PingInterval))
 	sb.WriteString(fmt.Sprintf("  SubProtocol: %v\n", c.SubProtocol))
 	sb.WriteString(fmt.Sprintf("  Proxy: %s\n", c.Proxy))
 
@@ -189,8 +195,8 @@ func (c *Flag) String() string {
 	sb.WriteString(fmt.Sprintf("  IsJSONPrettyPrint: %t\n", c.IsJSONPrettyPrint))
 	sb.WriteString(fmt.Sprintf("  IsBinary: %t\n", c.IsBinary))
 	sb.WriteString(fmt.Sprintf("  IsGzipResponse: %t\n", c.IsGzipResponse))
-	sb.WriteString(fmt.Sprintf("  IsPerf: %t\n", c.IsPerf))     // Added
-	sb.WriteString(fmt.Sprintf("  IsStdOut: %t\n", c.IsStdOut)) // Added
+	sb.WriteString(fmt.Sprintf("  IsPerf: %t\n", c.IsPerf))
+	sb.WriteString(fmt.Sprintf("  IsStdOut: %t\n", c.IsStdOut))
 
 	sb.WriteString(fmt.Sprintf("  Help: %t\n", c.Help))
 	sb.WriteString(fmt.Sprintf("  IsSTDin: %t\n", c.IsSTDin))

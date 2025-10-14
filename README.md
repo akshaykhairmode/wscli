@@ -78,6 +78,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | Flag | Shorthand | Description |
 |------|----------|-------------|
 | `--auth` | | HTTP Basic Authentication (`username:password`). |
+| `--bind-address` | | Bind address for outgoing connection (e.g., 192.168.1.100). |
 | `--binary` | `-b` | Send hex-encoded data. |
 | `--ca` | | Path to the CA certificate file (optional). |
 | `--cert` | | Path to the client certificate file (optional). |
@@ -86,6 +87,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--gzipr` | | Enable gzip decoding (server must send messages as binary). |
 | `--header` | `-H` | Custom headers (`key:value`). |
 | `--help` | `-h` | Show help information. |
+| `--ip-version` | | IP version to use for outgoing connection (4 or 6). |
 | `--jspp` | | Enable JSON pretty printing. |
 | `--key` | | Path to the certificate key file (optional). |
 | `--no-check` | `-n` | Disable TLS certificate verification. |
