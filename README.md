@@ -30,6 +30,13 @@ If you don’t have Go installed, download the latest binaries from the [Release
 $ wscli -c ws://localhost:8080/ws
 ```
 
+### Connect to a Unix domain socket
+
+```sh
+$ wscli -c ws://localhost/ws --unix-socket /tmp/ws.sock 
+NOTE : The -c command is required which actually tells the path to the websocket
+```
+
 ### Connect with custom headers
 ```sh
 $ wscli -c ws://localhost:8080/ws -H "Authorization: Bearer mytoken" -H "X-Custom: value"
@@ -94,6 +101,7 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--no-color` | | Disable colored output. |
 | `--origin` | `-o` | Specify origin for the WebSocket connection. |
 | `--proxy` | | Use a proxy URL. |
+| `--unix-socket` | | Connect to a Unix domain socket. |
 | `--response` | `-r` | Show HTTP response headers. |
 | `--show-ping-pong` | `-P` | Show ping/pong messages. |
 | `--slash` | | Enable slash commands. |

@@ -23,6 +23,7 @@ type Flag struct {
 	PingInterval        time.Duration
 	SubProtocol         []string
 	Proxy               string
+	UnixSocket          string
 
 	Perf Perf
 
@@ -107,6 +108,7 @@ func get() *Flag {
 	pflag.StringVar(&cfg.BindAddress, "bind-address", "", "Bind address for outgoing connection (e.g., 192.168.1.100).")
 	pflag.StringVar(&cfg.IPVersion, "ip-version", "", "IP version to use for outgoing connection (4 or 6).")
 	pflag.StringVar(&cfg.Proxy, "proxy", "", "Use a proxy URL.")
+	pflag.StringVar(&cfg.UnixSocket, "unix-socket", "", "Connect to a Unix domain socket.")
 	pflag.StringVar(&cfg.Auth, "auth", "", "HTTP Basic Authentication credentials (e.g., username:password).")
 	pflag.StringSliceVarP(&cfg.Headers, "header", "H", []string{}, "Custom headers (key:value, can be used multiple times).")
 	pflag.StringVarP(&cfg.Origin, "origin", "o", "", "Specify origin for the WebSocket connection (optional).")

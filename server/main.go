@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -34,14 +35,6 @@ func newUpgrader() *websocket.Upgrader {
 
 	u.OnOpen(func(c *websocket.Conn) {
 		fmt.Println("OnOpen:", c.RemoteAddr().String())
-
-		// if rand.IntN(10) > 5 {
-		// 	go func() {
-		// 		time.Sleep(5 * time.Second)
-		// 		c.WriteClose(3008, "closing after 5s")
-		// 	}()
-		// }
-
 	})
 	u.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {
 
@@ -51,12 +44,12 @@ func newUpgrader() *websocket.Upgrader {
 				log.Println(err)
 				return
 			}
+			// Use the standard BinaryMessage type to send the compressed data.
 			c.WriteMessage(websocket.BinaryMessage, zipData)
 		}
 
 		log.Println(messageType, string(data))
 		// echo
-		// fmt.Println("OnMessage:", messageType, string(data))
 		c.WriteMessage(messageType, data)
 	})
 	u.OnClose(func(c *websocket.Conn, err error) {
@@ -83,17 +76,53 @@ func zipStringToGzipBytes(input string) ([]byte, error) {
 func onWebsocket(w http.ResponseWriter, r *http.Request) {
 	_, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		panic(err)
+		// Log the error instead of panicking, which allows the server to keep running
+		log.Printf("Websocket upgrade failed: %v", err)
+		return
 	}
-	// fmt.Println("Upgraded:", conn.RemoteAddr().String())
 }
 
 func main() {
+	// Define a flag for the Unix Domain Socket path
+	udsPath := flag.String("uds", "", "Path to the Unix Domain Socket file (e.g., /tmp/ws.sock). If set, listens on UDS instead of TCP.")
+	flag.Parse()
+
+	var network string
+	var addrs []string
+
+	if *udsPath != "" {
+		// --- Unix Domain Socket Setup ---
+		network = "unix"
+		addrs = []string{*udsPath}
+		fmt.Printf("Starting WebSocket server on UDS: %s\n", *udsPath)
+
+		// 1. Clean up stale socket file before starting (required if previous run crashed)
+		if err := os.Remove(*udsPath); err != nil && !os.IsNotExist(err) {
+			// Log as fatal since we cannot proceed if the file can't be removed
+			log.Fatalf("Failed to clean up old UDS file %s: %v", *udsPath, err)
+		}
+
+		// 2. Clean up socket file on graceful exit
+		defer func() {
+			fmt.Printf("Cleaning up UDS file: %s\n", *udsPath)
+			if err := os.Remove(*udsPath); err != nil && !os.IsNotExist(err) {
+				log.Printf("Error cleaning up UDS file %s: %v", *udsPath, err)
+			}
+		}()
+
+	} else {
+		// --- TCP Default Setup ---
+		network = "tcp"
+		addrs = []string{":8080"}
+		fmt.Printf("Starting WebSocket server on TCP: %s\n", addrs[0])
+	}
+
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/ws", onWebsocket)
+
 	engine := nbhttp.NewEngine(nbhttp.Config{
-		Network:                 "tcp",
-		Addrs:                   []string{":8080"},
+		Network:                 network, // Dynamically set network type
+		Addrs:                   addrs,   // Dynamically set addresses
 		MaxLoad:                 1000000,
 		ReleaseWebsocketPayload: true,
 		Handler:                 mux,
@@ -105,6 +134,7 @@ func main() {
 		return
 	}
 
+	// Graceful shutdown handling
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	<-interrupt

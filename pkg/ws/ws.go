@@ -81,7 +81,18 @@ func Connect() (*websocket.Conn, CloseFunc, ReaderFunc, error) {
 		dialer.Proxy = http.ProxyURL(proxyURLParsed)
 	}
 
-	if config.Flags.BindAddress != "" || config.Flags.IPVersion != "" {
+	if config.Flags.UnixSocket != "" {
+
+		netDialer := &net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}
+
+		dialer.NetDialContext = func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return netDialer.DialContext(ctx, "unix", config.Flags.UnixSocket)
+		}
+
+	} else if config.Flags.BindAddress != "" || config.Flags.IPVersion != "" {
 		network := "tcp"
 		switch config.Flags.IPVersion {
 		case "4":
