@@ -156,11 +156,15 @@ $ wscli --slash -c ws://localhost:8080/ws
 
 #### Example
 ```sh
-$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNum 50}}" --rups 100 --mi 1s
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "hello world {{RandomNum 50}}" --rups 100 --mi 1s #with template
 
 OR
 
-$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 100 --mi 1s
+$ wscli -c ws://localhost:8080/ws --perf --tc 1000 --lm "/tmp/load.txt" --rups 100 --mi 1s #with file messages
+
+OR
+
+$ wscli -c ws://localhost:8080/ws --pconfig "config.yaml" # pass perf config by yaml.
 
 # Flags used:
 # --perf (enable performance testing)
