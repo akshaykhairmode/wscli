@@ -167,10 +167,22 @@ func (m *DefaultMessageGetter) GetTemplateString() string {
 }
 
 var funcMap = template.FuncMap{
-	"RandomNum":  randomInt,
-	"RandomUUID": randomUUID,
-	"RandomAN":   randomAlphaNumeric,
-	"UniqSeq":    getUniqueSequence,
+	"RandomNum":   randomInt,
+	"RandomUUID":  randomUUID,
+	"RandomAN":    randomAlphaNumeric,
+	"UniqSeq":     getUniqueSequence,
+	"Array":       array,
+	"RandomArray": randomArray,
+}
+
+var arrayCounter = &atomic.Uint64{}
+
+func array(elems ...string) string {
+	return elems[arrayCounter.Add(1)%uint64(len(elems))]
+}
+
+func randomArray(elems ...string) string {
+	return elems[rand.Intn(len(elems))]
 }
 
 func getUniqueSequence(group string, start ...uint64) uint64 {

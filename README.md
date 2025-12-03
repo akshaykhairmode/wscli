@@ -150,7 +150,8 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `RandomAN`                            | Generates a random alphanumeric string with the specified `<length>` (default: 10 characters).                   | `<length>` (optional)              | Integer                        |
 | `UniqSeq`                             | Generates a unique atomic sequence within a specified `<group>`. Multiple connections share the same sequence when using the same group. The `<start>` value sets the initial number (default: 0). If different start values are provided, the first one is used. Examples: <br> - `{{UniqSeq "1" 10}} != {{UniqSeq "1" 10}}` (Not the same number) <br> - `{{UniqSeq "0"}} == {{UniqSeq "1"}}` (Different groups generate the same number) | `<group>` <br> `<start>` (optional) | String <br> Integer            |
 | `.Seq`                                | Generates a sequence starting from 0 for each connection. No shared counters.      |                |                         |
-
+| `Array`                               | Selects an element from a list of strings sequentially. The sequence is shared globally across all connections. | `{{Array "Elem1" "Elem2" "ElemN"}}`          | String                         |
+| `RandomArray`                         | Selects a random element from a list of strings.                                                                 |    `{{RandomArray "Elem1" "Elem2" "ElemN"}}`       | String                         |
 
 
 #### Example
