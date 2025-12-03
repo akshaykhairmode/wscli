@@ -1,6 +1,6 @@
 tc: 100 #total number of connections.
 lm: "Hello, server!" #the message which needs to be sent.
-mi: 0 #message per second. When set to 0 will send the message only once.
+mi: 0 #message interval. data type is duration. example values, 1s , 30m, 1h, etc
 am: "AUTH user:password" #Auth Message
 wba: 5s #wait before sending authorization.
 waa: 2s #wait after sending authorization.
