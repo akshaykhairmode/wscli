@@ -113,8 +113,6 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--ping-interval` | | The interval for pinging to the connected server. Default is 30s. |
 | `--perf` | | Enable performance testing. |
 | `--std-out` | | Print the received messages in standard output, default is standard error. |
-| `--srp` | | Percentage of connections that will be slow readers. |
-| `--srd` | | Duration by which slow readers will delay reading messages. Default 100ms if srp is greater than 0. |
 
 
 ## 🛠 Slash Commands (Enable via `--slash`)
