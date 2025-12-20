@@ -112,7 +112,9 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--print-interval` | | The interval for printing the output. Default is 1s. |
 | `--ping-interval` | | The interval for pinging to the connected server. Default is 30s. |
 | `--perf` | | Enable performance testing. |
-| `--std-out` | | print the received messages in standard output, default is standard error. |
+| `--std-out` | | Print the received messages in standard output, default is standard error. |
+| `--srp` | | Percentage of connections that will be slow readers. |
+| `--srd` | | Duration by which slow readers will delay reading messages. Default 100ms if srp is greater than 0. |
 
 
 ## 🛠 Slash Commands (Enable via `--slash`)
@@ -137,6 +139,8 @@ $ wscli --slash -c ws://localhost:8080/ws
 | `--wba` | Wait time before sending auth message to the server | duration |
 | `--rups` | Connections ramp-up per second (default: 1). | unsigned integer |
 | `--outfile` | Do not open the tview output and write the output to file. | string |
+| `--srp` | Percentage of connections that will be slow readers. | unsigned integer |
+| `--srd` | Duration by which slow readers will delay reading messages. Default 100ms if srp is greater than 0. | duration |
 | `--pconfig` | Take perf config from file. Pass the file path here. The format of the file is available [here](config.yaml). This will override all other perf flags even if set. | string |
 
 **Note**: `--lm` and `--am` also support file input. Provide an absolute path to send messages from a file. The file reading will restart from the first line when EOF is reached. If file is less than 10MB then we store it in memory. "\n" is the delimeter.

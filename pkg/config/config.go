@@ -63,13 +63,15 @@ type Perf struct {
 	WaitAfterAuth        time.Duration `yaml:"waa"`     //wait for x amount of time before starting to send load.
 	RampUpConnsPerSecond uint          `yaml:"rups"`    //how many connections to add every second
 	LogOutFile           string        `yaml:"outfile"` //give the file path where to write the logs
+	SlowReadPercent      uint          `yaml:"srp"`     //percent of connections which will be slow readers. If 0 then no slow readers.
+	SlowReadDuration     time.Duration `yaml:"srd"`     //duration by which slow readers will delay reading messages.
 	ConfigPath           string        //the file path from where to get the perf config
 }
 
 func (p Perf) String() string {
 	return fmt.Sprintf(`Total Connections: %d, Messages Interval: %s, Wait Before Auth: %s, Wait After Auth: %s
 	Ramp Up Connections Per Second: %d, Log Out File: %s, Auth Message: %s, Load Message: %s
-	ConfigPath : %s`,
+	ConfigPath : %s, Slow Read Percent: %d, Slow Read Duration: %s`,
 		p.TotalConns,
 		p.MessageInterval,
 		p.WaitBeforeAuth,
@@ -79,6 +81,8 @@ func (p Perf) String() string {
 		p.AuthMessage,
 		p.LoadMessage,
 		p.ConfigPath,
+		p.SlowReadPercent,
+		p.SlowReadDuration,
 	)
 }
 
@@ -133,6 +137,8 @@ func get() *Flag {
 	pflag.DurationVar(&cfg.Perf.WaitBeforeAuth, "wba", 0, "Wait time before sending authentication to server")
 	pflag.UintVar(&cfg.Perf.RampUpConnsPerSecond, "rups", 1, "Number of connections to ramp up per second")
 	pflag.StringVar(&cfg.Perf.LogOutFile, "outfile", "", "Write to file instead of output on terminal")
+	pflag.UintVar(&cfg.Perf.SlowReadPercent, "srp", 0, "Percentage of connections that will be slow readers")
+	pflag.DurationVar(&cfg.Perf.SlowReadDuration, "srd", 100*time.Millisecond, "Duration by which slow readers will delay reading messages. Default 100ms if srp is greater than 0")
 
 	pflag.Parse()
 

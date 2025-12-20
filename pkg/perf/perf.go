@@ -16,10 +16,11 @@ import (
 )
 
 type Generator struct {
-	config      config.Perf
-	metric      *Metrics
-	loadMessage messageGetter
-	authMessage messageGetter
+	config          config.Perf
+	metric          *Metrics
+	loadMessage     messageGetter
+	authMessage     messageGetter
+	slowReadCounter uint
 }
 
 func New() (*Generator, error) {
@@ -59,10 +60,11 @@ func New() (*Generator, error) {
 	logger.Info().Msgf("Config Loaded : %s", config.Flags.Perf)
 
 	return &Generator{
-		config:      config.Flags.Perf,
-		metric:      NewMetrics(int64(config.Flags.Perf.TotalConns), config.Flags.Perf.LogOutFile),
-		loadMessage: lm,
-		authMessage: am,
+		config:          config.Flags.Perf,
+		metric:          NewMetrics(int64(config.Flags.Perf.TotalConns), config.Flags.Perf.LogOutFile),
+		loadMessage:     lm,
+		authMessage:     am,
+		slowReadCounter: 0,
 	}, nil
 }
 
@@ -77,6 +79,8 @@ func (g *Generator) Run(showTview bool) {
 	}()
 
 	logger.Info().Msg("Started the load test")
+
+	g.slowReadCounter = g.config.TotalConns / 100 * g.config.SlowReadPercent
 
 	wg := &sync.WaitGroup{}
 
@@ -94,8 +98,14 @@ func (g *Generator) Run(showTview bool) {
 					break loop
 				}
 
+				isSlowReader := false
+				if g.slowReadCounter > 0 {
+					isSlowReader = true
+					g.slowReadCounter--
+				}
+
 				wg.Add(1)
-				go g.processConnection(wg)
+				go g.processConnection(wg, isSlowReader)
 				total--
 			}
 
@@ -114,7 +124,7 @@ func (g *Generator) Run(showTview bool) {
 
 }
 
-func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup, waitChan chan struct{}) {
+func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup, waitChan chan struct{}, isSlowRead bool) {
 	defer wg.Done()
 
 	defer func() {
@@ -128,6 +138,10 @@ func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup, wai
 			return
 		}
 
+		if isSlowRead {
+			time.Sleep(g.config.SlowReadDuration)
+		}
+
 		if len(data) <= 0 {
 			continue
 		}
@@ -136,7 +150,7 @@ func (g *Generator) messgeReceiver(conn *websocket.Conn, wg *sync.WaitGroup, wai
 	}
 }
 
-func (g *Generator) processConnection(wg *sync.WaitGroup) {
+func (g *Generator) processConnection(wg *sync.WaitGroup, isSlowReader bool) {
 	defer wg.Done()
 	defer g.metric.IncrDroppedConnections()
 
@@ -160,7 +174,7 @@ func (g *Generator) processConnection(wg *sync.WaitGroup) {
 
 	//read messages
 	wg.Add(1)
-	go g.messgeReceiver(conn, wg, waitChan)
+	go g.messgeReceiver(conn, wg, waitChan, isSlowReader)
 
 	//Wait for some time before sending auth.
 	if g.config.WaitBeforeAuth > 0 {
