@@ -1,14 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "lsp": true,
   "mcp": {
     "codebase-memory": {
       "type": "local",
       "command": ["codebase-memory-mcp"],
-      "enabled": true
-    },
-    "golang-lsp": {
-      "type": "local",
-      "command": ["/Users/akshay/go/bin/gopls"],
       "enabled": true
     }
   },
