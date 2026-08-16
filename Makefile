@@ -9,7 +9,7 @@ release:
 
 .PHONY: test
 test:
-	goreleaser release --snapshot --clean
+	go test ./...
 
 .PHONY: lint
 lint:
