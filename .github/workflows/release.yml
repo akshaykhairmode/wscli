@@ -44,6 +44,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          git config user.name "Akshay Khairmode"
+          git config user.email "akshaykhairmode@gmail.com"
+
           # On a normal main push, skip if HEAD is already tagged.
           if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             if git tag --points-at HEAD | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
