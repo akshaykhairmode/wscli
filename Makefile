@@ -1,3 +1,7 @@
+.PHONY: install
+install:
+	go install github.com/goreleaser/goreleaser/v2@latest
+
 .PHONY: release
 release:
 	goreleaser release --clean

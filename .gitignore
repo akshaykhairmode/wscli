@@ -27,3 +27,5 @@ bin
 .vscode
 
 dist/
+.cursor/
+.mcp.json
