@@ -9,7 +9,7 @@ release:
 
 .PHONY: test
 test:
-	go test ./...
+	go test ./... -count=1
 
 .PHONY: lint
 lint:

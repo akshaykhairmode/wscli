@@ -27,7 +27,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run tests
-        run: go test ./...
+        run: make test
 
   release:
     runs-on: ubuntu-latest
