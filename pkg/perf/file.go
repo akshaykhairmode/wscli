@@ -38,7 +38,7 @@ func (fo *FileOutput) tWrite(data string) {
 	}
 }
 
-func (fo *FileOutput) UpdateTableAndLogs(data []string, errors *errMsg) {
+func (fo *FileOutput) UpdateTableAndLogs(data map[string]string, errors *errMsg) {
 
 	//Stats
 	for _, heading := range headings {
@@ -47,8 +47,8 @@ func (fo *FileOutput) UpdateTableAndLogs(data []string, errors *errMsg) {
 
 	fo.tWrite("\n")
 
-	for _, value := range data {
-		fo.tWrite(value)
+	for _, heading := range headings {
+		fo.tWrite(data[heading])
 	}
 
 	fo.tWrite("\n")

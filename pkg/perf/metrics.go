@@ -34,7 +34,7 @@ type Metrics struct {
 }
 
 type Printer interface {
-	UpdateTableAndLogs(data []string, errors *errMsg)
+	UpdateTableAndLogs(data map[string]string, errors *errMsg)
 	Start()
 	Stop()
 }
@@ -157,10 +157,10 @@ func (m *Metrics) printMetrics() {
 	}()
 
 	go func() {
-		m.output.UpdateTableAndLogs(m.getTable(headings), m.errors)
+		m.output.UpdateTableAndLogs(m.getTable(), m.errors)
 
 		for range time.Tick(config.Flags.PrintOutputInterval) {
-			m.output.UpdateTableAndLogs(m.getTable(headings), m.errors)
+			m.output.UpdateTableAndLogs(m.getTable(), m.errors)
 		}
 	}()
 
@@ -168,9 +168,9 @@ func (m *Metrics) printMetrics() {
 
 func (m *Metrics) printFinalMetrics() {
 
-	values := m.getTable(headings)
-	for index, heading := range headings {
-		fmt.Printf("%s,%s\n", heading, values[index])
+	values := m.getTable()
+	for _, heading := range headings {
+		fmt.Printf("%s,%s\n", heading, values[heading])
 	}
 
 }
@@ -181,44 +181,44 @@ const (
 	p99        = 0.99
 )
 
-func (m *Metrics) getTable(heading []string) []string {
+func (m *Metrics) getTable() map[string]string {
 
-	final := []string{}
+	final := make(map[string]string, len(headings))
 
 	connectTime := m.connectTime.Snapshot()
 	messageTime := m.messageTime.Snapshot()
 
-	for _, val := range heading {
+	for _, val := range headings {
 
 		switch val {
 		case TotalConnections:
-			final = append(final, intToString(m.totalConns))
+			final[val] = intToString(m.totalConns)
 		case ActiveConnections:
-			final = append(final, calculatePercentage(m.activeConnections.Count(), m.totalConns))
+			final[val] = calculatePercentage(m.activeConnections.Count(), m.totalConns)
 		case DroppedConnections:
-			final = append(final, calculatePercentage(m.droppedConnections.Count(), m.totalConns))
+			final[val] = calculatePercentage(m.droppedConnections.Count(), m.totalConns)
 		case TotalSentMessages:
-			final = append(final, intToString(m.totalSentMessages.Count()))
+			final[val] = intToString(m.totalSentMessages.Count())
 		case TotalReceivedMessages:
-			final = append(final, intToString(m.totalReceivedMessages.Count()))
+			final[val] = intToString(m.totalReceivedMessages.Count())
 		case TotalFailedMessages:
-			final = append(final, intToString(m.failedMessages.Count()))
+			final[val] = intToString(m.failedMessages.Count())
 		case ConnectionMeanTime:
-			final = append(final, durToString(connectTime.Mean()))
+			final[val] = durToString(connectTime.Mean())
 		case ConnectionP95Time:
-			final = append(final, durToString(connectTime.Percentile(p95)))
+			final[val] = durToString(connectTime.Percentile(p95))
 		case ConnectionP99Time:
-			final = append(final, durToString(connectTime.Percentile(p99)))
+			final[val] = durToString(connectTime.Percentile(p99))
 		case MessageMeanTime:
-			final = append(final, durToString(messageTime.Mean()))
+			final[val] = durToString(messageTime.Mean())
 		case MessageP95Time:
-			final = append(final, durToString(messageTime.Percentile(p95)))
+			final[val] = durToString(messageTime.Percentile(p95))
 		case MessageP99Time:
-			final = append(final, durToString(messageTime.Percentile(p99)))
+			final[val] = durToString(messageTime.Percentile(p99))
 		case StartTime:
-			final = append(final, m.startTimeStr)
+			final[val] = m.startTimeStr
 		case Uptime:
-			final = append(final, time.Since(m.startTime).Round(time.Second).String())
+			final[val] = time.Since(m.startTime).Round(time.Second).String()
 		}
 	}
 
