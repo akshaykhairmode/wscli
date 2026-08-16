@@ -8,7 +8,7 @@
     },
     "golang-lsp": {
       "type": "local",
-      "command": ["gopls"],
+      "command": ["/Users/akshay/go/bin/gopls"],
       "enabled": true
     }
   },
