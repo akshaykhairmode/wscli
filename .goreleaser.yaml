@@ -46,6 +46,7 @@ brews:
     repository:
       owner: akshaykhairmode
       name: homebrew-tools
+      token: "{{ .Env.BREW_TOKEN }}"
     homepage: "https://github.com/akshaykhairmode/wscli"
     description: "A command-line WebSocket client"
     license: "GPL-3.0"
@@ -57,6 +58,7 @@ brews:
     repository:
       owner: akshaykhairmode
       name: homebrew-tools
+      token: "{{ .Env.BREW_TOKEN }}"
     homepage: "https://github.com/akshaykhairmode/wscli"
     description: "A command-line WebSocket client"
     license: "GPL-3.0"

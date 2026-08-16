@@ -99,7 +99,8 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GORELEASER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BREW_TOKEN: ${{ secrets.GORELEASER_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ steps.tag.outputs.new_tag }}
 
   docker:
